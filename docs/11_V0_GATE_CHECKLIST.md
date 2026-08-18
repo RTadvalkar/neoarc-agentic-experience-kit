@@ -61,14 +61,14 @@ After Slice 3 verify:
 
 After Slice 4 verify:
 
-- [ ] Missions/runs/tasks are distinct enough to understand.
-- [ ] Hierarchical workflow view works.
-- [ ] Active/error branches remain visible.
-- [ ] Waiting-for-human state is prominent.
-- [ ] AgentTask can link supplied inputs/knowledge/relationships/tools/outputs.
-- [ ] Missing links are not invented.
-- [ ] Retry/cancel/error states exist.
-- [ ] No workflow-engine-specific backend terminology leaks into generic contracts.
+- [x] Missions/runs/tasks are distinct enough to understand.
+- [x] Hierarchical workflow view works.
+- [x] Active/error branches remain visible.
+- [x] Waiting-for-human state is prominent.
+- [x] AgentTask can link supplied inputs/knowledge/relationships/tools/outputs.
+- [x] Missing links are not invented.
+- [x] Retry/cancel/error states exist.
+- [x] No workflow-engine-specific backend terminology leaks into generic contracts.
 
 ---
 

@@ -19,6 +19,12 @@
  *   error, outputs) the most recent event carried — see `RunProjection`.
  * - `mission.task` — one node per `taskId`, accumulating across
  *   `task.started -> task.progress -> task.completed`.
+ *
+ * Invariant: `run.started` must precede any subsequent `run.*` for that
+ * `runId`, and `task.started` must precede `task.progress`/`task.completed`
+ * for that `taskId`. A violation throws `ProjectionInvariantError` rather
+ * than inventing a `Run <id>` label, `Task <id>` title, `running` status,
+ * cancellation state, or empty workflow.
  */
 
 import type {
@@ -42,6 +48,7 @@ import type {
   WorkflowGroup,
 } from "../neoarc-agentic-contracts/runtime"
 import type { PendingInteraction } from "../neoarc-agentic-contracts/human-interaction"
+import { requireExistingNode } from "./projection-invariant.ts"
 import type { AgenticNodeDefinition, AgenticViewNode, MatchResult } from "./types"
 
 const TARGET = "mission" as const
@@ -99,15 +106,17 @@ export const runNodeDefinition: AgenticNodeDefinition<unknown, RunProjection> = 
     }
 
     // Every other runtime event references `runId` rather than embedding a
-    // fresh `RunSummary`, so recover the accumulated projection first.
+    // fresh `RunSummary`. A prior `run.started` is required — never invent a
+    // label, status, cancellation, or empty workflow.
     const runId = (event.payload as { readonly runId: string }).runId
     const key = keyFor("run", runId)
-    const existing = context.findExistingNode?.(key) as AgenticViewNode<RunProjection> | undefined
-    const base: RunProjection =
-      existing?.data ?? {
-        run: { id: runId, label: `Run ${runId}`, status: "running", cancellation: "none" },
-        workflow: [],
-      }
+    const existing = requireExistingNode(
+      context.findExistingNode?.(key) as AgenticViewNode<RunProjection> | undefined,
+      event.type,
+      key,
+      "run.started",
+    )
+    const base = existing.data
 
     if (event.type === "run.waiting_for_human") {
       const payload = event.payload as RunWaitingForHumanPayload
@@ -175,8 +184,13 @@ export const taskNodeDefinition: AgenticNodeDefinition<unknown, AgentTask> = {
     if (event.type === "task.progress") {
       const payload = event.payload as TaskProgressPayload
       const key = keyFor("task", payload.taskId)
-      const existing = context.findExistingNode?.(key) as AgenticViewNode<AgentTask> | undefined
-      const base: AgentTask = existing?.data ?? { taskId: payload.taskId, title: `Task ${payload.taskId}`, status: "running" }
+      const existing = requireExistingNode(
+        context.findExistingNode?.(key) as AgenticViewNode<AgentTask> | undefined,
+        event.type,
+        key,
+        "task.started",
+      )
+      const base = existing.data
       const data: AgentTask = { ...base, progress: payload.progress, status: payload.status ?? base.status }
       return { key, kind: "mission.task", target: TARGET, data, visibility: "visible", correlation: event.correlation }
     }
@@ -184,8 +198,13 @@ export const taskNodeDefinition: AgenticNodeDefinition<unknown, AgentTask> = {
     // task.completed
     const payload = event.payload as TaskCompletedPayload
     const key = keyFor("task", payload.taskId)
-    const existing = context.findExistingNode?.(key) as AgenticViewNode<AgentTask> | undefined
-    const base: AgentTask = existing?.data ?? { taskId: payload.taskId, title: `Task ${payload.taskId}`, status: "running" }
+    const existing = requireExistingNode(
+      context.findExistingNode?.(key) as AgenticViewNode<AgentTask> | undefined,
+      event.type,
+      key,
+      "task.started",
+    )
+    const base = existing.data
     const data: AgentTask = {
       ...base,
       status: payload.status,
