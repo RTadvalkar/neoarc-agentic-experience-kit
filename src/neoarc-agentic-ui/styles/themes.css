@@ -1,0 +1,59 @@
+/**
+ * neoarc-agentic-ui / styles / themes.css
+ *
+ * Dark theme overrides for the token contract defined in tokens.css. Owned
+ * by the reusable UI package (Correction 1). A host toggles dark mode by
+ * adding a `.dark` class to a root ancestor (typically `<html>`) — the kit
+ * does not prescribe how that class gets there.
+ */
+
+.dark {
+  color-scheme: dark;
+
+  /* Surfaces */
+  --neoarc-color-background: oklch(0.16 0.006 247);
+  --neoarc-color-surface: oklch(0.205 0.006 247);
+  --neoarc-color-surface-raised: oklch(0.24 0.007 247);
+  --neoarc-color-surface-muted: oklch(0.22 0.006 247);
+  --neoarc-color-overlay: oklch(0.05 0.005 247 / 0.6);
+
+  /* Text */
+  --neoarc-color-foreground: oklch(0.96 0.002 247);
+  --neoarc-color-foreground-muted: oklch(0.72 0.008 247);
+  --neoarc-color-foreground-subtle: oklch(0.58 0.008 247);
+
+  /* Borders */
+  --neoarc-color-border: oklch(1 0 0 / 0.1);
+  --neoarc-color-border-muted: oklch(1 0 0 / 0.06);
+  --neoarc-color-border-strong: oklch(1 0 0 / 0.18);
+
+  /* Accent */
+  --neoarc-color-accent: oklch(0.72 0.14 255);
+  --neoarc-color-accent-foreground: oklch(0.14 0.02 255);
+  --neoarc-color-accent-muted: oklch(0.28 0.05 255);
+
+  /* Semantic states */
+  --neoarc-color-success: oklch(0.72 0.14 152);
+  --neoarc-color-success-foreground: oklch(0.14 0.02 152);
+  --neoarc-color-success-muted: oklch(0.26 0.05 152);
+
+  --neoarc-color-warning: oklch(0.78 0.14 80);
+  --neoarc-color-warning-foreground: oklch(0.16 0.02 80);
+  --neoarc-color-warning-muted: oklch(0.3 0.06 85);
+
+  --neoarc-color-danger: oklch(0.7 0.18 25);
+  --neoarc-color-danger-foreground: oklch(0.14 0.02 25);
+  --neoarc-color-danger-muted: oklch(0.28 0.07 25);
+
+  --neoarc-color-info: oklch(0.72 0.1 235);
+  --neoarc-color-info-foreground: oklch(0.14 0.02 235);
+  --neoarc-color-info-muted: oklch(0.26 0.05 235);
+
+  /* Focus */
+  --neoarc-color-focus-ring: oklch(0.75 0.13 255);
+
+  /* Elevation (dark surfaces need lighter, more diffuse shadows) */
+  --neoarc-elevation-1: 0 1px 2px oklch(0 0 0 / 0.3);
+  --neoarc-elevation-2: 0 2px 8px oklch(0 0 0 / 0.4);
+  --neoarc-elevation-3: 0 8px 24px oklch(0 0 0 / 0.5);
+}
