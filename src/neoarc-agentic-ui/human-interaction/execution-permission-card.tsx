@@ -3,7 +3,9 @@
  *
  * Purpose: the inline, resolvable "may this specific tool/action proceed?"
  * card. This answers a strictly different question from any proposal/
- * business-decision component — see `docs/APPROVAL_SEMANTICS.md`. Never
+ * business-decision component — see
+ * `docs/02B_INSTRUCTION_UX_TRACEABILITY_AND_HUMAN_CONTROL.md` §Two
+ * separate approval domains. Never
  * displays raw tool arguments; only the supplied
  * `ToolActionIdentity.actionSummary`/`targetLabel`.
  *

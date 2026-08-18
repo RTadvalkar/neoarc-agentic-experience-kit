@@ -53,6 +53,15 @@ import { AsyncWorkCard } from "../../../../src/neoarc-agentic-ui/conversation/as
 import { ResponseActions } from "../../../../src/neoarc-agentic-ui/conversation/response-actions"
 import { ConversationEmptyState } from "../../../../src/neoarc-agentic-ui/conversation/conversation-empty-state"
 import { GenericAgenticNodeFallback } from "../../../../src/neoarc-agentic-ui/conversation/generic-agentic-node-fallback"
+import { ExecutionPermissionCard } from "../../../../src/neoarc-agentic-ui/human-interaction/execution-permission-card"
+import { ExecutionPermissionDialog } from "../../../../src/neoarc-agentic-ui/human-interaction/execution-permission-dialog"
+import { PermissionOutcomeBadge } from "../../../../src/neoarc-agentic-ui/human-interaction/permission-outcome-badge"
+import { ProposalCard } from "../../../../src/neoarc-agentic-ui/human-interaction/proposal-card"
+import { ProposalViewer } from "../../../../src/neoarc-agentic-ui/human-interaction/proposal-viewer"
+import { ProposalStatusBadge } from "../../../../src/neoarc-agentic-ui/human-interaction/proposal-status-badge"
+import { ProposalStatusTimeline } from "../../../../src/neoarc-agentic-ui/human-interaction/proposal-status-timeline"
+import { DecisionHistory } from "../../../../src/neoarc-agentic-ui/human-interaction/decision-history"
+import { PendingHumanInteractionSummary } from "../../../../src/neoarc-agentic-ui/human-interaction/pending-human-interaction-summary"
 import {
   galleryActionAvailabilities,
   galleryAgent,
@@ -88,6 +97,22 @@ import {
   galleryToolCompleted,
   galleryToolRunning,
 } from "../../../../lib/showcase/conversation-gallery-fixtures"
+import {
+  galleryActionFailedProposal,
+  galleryActionPendingProposal,
+  galleryCleanProposal,
+  galleryConflictProposal,
+  galleryFinalizedProposal,
+  galleryOverrideRequiredProposal,
+  galleryPendingInteractions,
+  galleryPermissionPending,
+  galleryPolicyWarningProposal,
+  galleryProposalWithEvidence,
+  galleryResolvedPermission,
+  gallerySubmittedPermission,
+  galleryStaleProposal,
+  galleryUnavailablePermission,
+} from "../../../../lib/showcase/human-interaction-gallery-fixtures"
 import { GalleryEntry, GalleryVariantRow } from "./gallery-entry"
 
 export interface ComponentGalleryProps {
@@ -96,6 +121,7 @@ export interface ComponentGalleryProps {
 
 export function ComponentGallery({ onEmitUIEvent }: ComponentGalleryProps) {
   const [activeEntityId, setActiveEntityId] = useState(gallerySectionContext.id)
+  const [permissionDialogOpen, setPermissionDialogOpen] = useState(false)
 
   return (
     <div className="flex flex-col gap-8 pb-4" aria-label="Foundation component gallery">
@@ -680,6 +706,195 @@ export function ComponentGallery({ onEmitUIEvent }: ComponentGalleryProps) {
             <GenericAgenticNodeFallback
               node={{ key: "gallery-unknown-node", kind: "mission.unrecognized-kind", target: "mission", data: { note: "example payload" }, visibility: "visible" }}
             />
+          </div>
+        </GalleryVariantRow>
+      </GalleryEntry>
+
+      <GalleryEntry
+        id="execution-permission-card"
+        name="ExecutionPermissionCard / ExecutionPermissionDialog / PermissionOutcomeBadge"
+        description="'May this specific tool/action proceed?' — a strictly different question from any proposal/business-decision component below. pending shows Allow once/Reject/Cancel; submitted disables them with an explicit pending indicator; resolved shows PermissionOutcomeBadge instead of buttons; unavailable renders PermissionBlockedState."
+        inputModel="request: ExecutionPermissionRequest, onEmitAllowOnce?, onEmitReject?, onEmitCancel?"
+      >
+        <GalleryVariantRow label="Pending">
+          <div className="w-full max-w-lg">
+            <ExecutionPermissionCard
+              request={galleryPermissionPending}
+              onEmitAllowOnce={onEmitUIEvent}
+              onEmitReject={onEmitUIEvent}
+              onEmitCancel={onEmitUIEvent}
+            />
+          </div>
+        </GalleryVariantRow>
+        <GalleryVariantRow label="Submitted (awaiting confirmation)">
+          <div className="w-full max-w-lg">
+            <ExecutionPermissionCard request={gallerySubmittedPermission} onEmitAllowOnce={onEmitUIEvent} />
+          </div>
+        </GalleryVariantRow>
+        <GalleryVariantRow label="Resolved">
+          <div className="w-full max-w-lg">
+            <ExecutionPermissionCard request={galleryResolvedPermission} />
+          </div>
+        </GalleryVariantRow>
+        <GalleryVariantRow label="Unavailable (renders PermissionBlockedState, not a resolved outcome)">
+          <div className="w-full max-w-lg">
+            <ExecutionPermissionCard request={galleryUnavailablePermission} />
+          </div>
+        </GalleryVariantRow>
+        <GalleryVariantRow label="As a modal (ExecutionPermissionDialog)">
+          <button
+            type="button"
+            onClick={() => setPermissionDialogOpen(true)}
+            className="rounded-[var(--neoarc-radius-md)] border border-[var(--neoarc-color-border)] bg-[var(--neoarc-color-surface)] px-3 py-1.5 text-xs font-medium text-[var(--neoarc-color-foreground)]"
+          >
+            Open permission dialog
+          </button>
+          <ExecutionPermissionDialog
+            request={galleryPermissionPending}
+            open={permissionDialogOpen}
+            onOpenChange={setPermissionDialogOpen}
+            onEmitAllowOnce={onEmitUIEvent}
+            onEmitReject={onEmitUIEvent}
+            onEmitCancel={onEmitUIEvent}
+          />
+        </GalleryVariantRow>
+        <GalleryVariantRow label="PermissionOutcomeBadge — all four outcomes">
+          <PermissionOutcomeBadge outcome="allowed_once" />
+          <PermissionOutcomeBadge outcome="rejected" />
+          <PermissionOutcomeBadge outcome="cancelled" />
+          <PermissionOutcomeBadge outcome="unavailable" />
+        </GalleryVariantRow>
+      </GalleryEntry>
+
+      <GalleryEntry
+        id="proposal-card"
+        name="ProposalCard"
+        description="Compact conversation-inline proposal summary — 'should this become authoritative?', never an execution-permission question. Renders only the supplied decisionPermissions, plus an honest InlineNotice explaining why an action is unavailable (never a mysteriously grayed-out button with no reason)."
+        inputModel="proposal: ProposalSummary, onEmitOpen?, onEmitApply?, onEmitRefine?, onEmitReject?, onEmitDefer?"
+      >
+        <GalleryVariantRow label="Clean (ready for review)">
+          <div className="w-full max-w-xl">
+            <ProposalCard proposal={galleryCleanProposal} onEmitOpen={onEmitUIEvent} onEmitApply={onEmitUIEvent} onEmitReject={onEmitUIEvent} onEmitDefer={onEmitUIEvent} onRequestRefine={() => onEmitUIEvent(createUIEvent({ type: "proposal.refine.request", sourceComponent: "gallery", payload: { proposalId: galleryCleanProposal.id, note: "(gallery) refine requested" } }))} />
+          </div>
+        </GalleryVariantRow>
+        <GalleryVariantRow label="Stale">
+          <div className="w-full max-w-xl">
+            <ProposalCard proposal={galleryStaleProposal} onEmitOpen={onEmitUIEvent} onEmitApply={onEmitUIEvent} onEmitReject={onEmitUIEvent} onEmitDefer={onEmitUIEvent} />
+          </div>
+        </GalleryVariantRow>
+        <GalleryVariantRow label="Conflicted (unresolved conflict blocks approve, with an honest reason)">
+          <div className="w-full max-w-xl">
+            <ProposalCard proposal={galleryConflictProposal} onEmitOpen={onEmitUIEvent} onEmitReject={onEmitUIEvent} onEmitDefer={onEmitUIEvent} />
+          </div>
+        </GalleryVariantRow>
+        <GalleryVariantRow label="Action pending (approve emitted, awaiting backend confirmation)">
+          <div className="w-full max-w-xl">
+            <ProposalCard proposal={galleryActionPendingProposal} onEmitOpen={onEmitUIEvent} />
+          </div>
+        </GalleryVariantRow>
+        <GalleryVariantRow label="Action failed (last decision attempt was rejected by the backend)">
+          <div className="w-full max-w-xl">
+            <ProposalCard proposal={galleryActionFailedProposal} onEmitOpen={onEmitUIEvent} onEmitApply={onEmitUIEvent} onEmitReject={onEmitUIEvent} onEmitDefer={onEmitUIEvent} />
+          </div>
+        </GalleryVariantRow>
+        <GalleryVariantRow label="Finalized (approved, decisionPermissions empty — no further decision available)">
+          <div className="w-full max-w-xl">
+            <ProposalCard proposal={galleryFinalizedProposal} onEmitOpen={onEmitUIEvent} />
+          </div>
+        </GalleryVariantRow>
+      </GalleryEntry>
+
+      <GalleryEntry
+        id="proposal-viewer"
+        name="ProposalViewer"
+        description="Full-detail review surface composing ChangeDiffViewer, risk/policy findings, ConflictResolutionPanel, evidence, DecisionHistory, DecisionBar, and HumanOverrideDialog. Intended for a dedicated review surface (inspector/drawer), not conversation-inline."
+        inputModel="proposal: ProposalSummary, onEmitApply?, onEmitRefine?, onEmitReject?, onEmitDefer?, onEmitOverrideSubmit?, onEmitChangeOpen?, onEmitConflictResolve?, onEmitHistoryOpen?"
+      >
+        <GalleryVariantRow label="Proposal with evidence and an expandable text diff">
+          <div className="w-full max-w-2xl">
+            <ProposalViewer
+              proposal={galleryProposalWithEvidence}
+              onEmitApply={onEmitUIEvent}
+              onEmitReject={onEmitUIEvent}
+              onEmitDefer={onEmitUIEvent}
+              onEmitChangeOpen={onEmitUIEvent}
+            />
+          </div>
+        </GalleryVariantRow>
+        <GalleryVariantRow label="Policy warning + risk finding">
+          <div className="w-full max-w-2xl">
+            <ProposalViewer
+              proposal={galleryPolicyWarningProposal}
+              onEmitApply={onEmitUIEvent}
+              onEmitReject={onEmitUIEvent}
+              onEmitDefer={onEmitUIEvent}
+            />
+          </div>
+        </GalleryVariantRow>
+        <GalleryVariantRow label="Unresolved conflict (ConflictResolutionPanel resolution input)">
+          <div className="w-full max-w-2xl">
+            <ProposalViewer proposal={galleryConflictProposal} onEmitReject={onEmitUIEvent} onEmitDefer={onEmitUIEvent} onEmitConflictResolve={onEmitUIEvent} />
+          </div>
+        </GalleryVariantRow>
+        <GalleryVariantRow label="Override required (opens HumanOverrideDialog from DecisionBar)">
+          <div className="w-full max-w-2xl">
+            <ProposalViewer
+              proposal={galleryOverrideRequiredProposal}
+              onEmitReject={onEmitUIEvent}
+              onEmitDefer={onEmitUIEvent}
+              onEmitOverrideSubmit={onEmitUIEvent}
+            />
+          </div>
+        </GalleryVariantRow>
+        <GalleryVariantRow label="Finalized, with decision history and a ProposalStatusTimeline (Trace-shaped alternate view of the same facts)">
+          <div className="w-full max-w-2xl">
+            <ProposalViewer proposal={galleryFinalizedProposal} onEmitHistoryOpen={onEmitUIEvent} />
+            <div className="mt-3 rounded-[var(--neoarc-radius-md)] border border-[var(--neoarc-color-border)] p-3">
+              <ProposalStatusTimeline proposal={galleryFinalizedProposal} onEmitHistoryOpen={onEmitUIEvent} />
+            </div>
+          </div>
+        </GalleryVariantRow>
+      </GalleryEntry>
+
+      <GalleryEntry
+        id="proposal-status-badge"
+        name="ProposalStatusBadge / DecisionHistory"
+        description="ProposalStatusBadge renders every ProposalStatus value; DecisionHistory is the compact, collapsed-by-default audit list of already-recorded HumanDecision entries (emits proposal.history.open once on first expand)."
+        inputModel="status: ProposalStatus  |  proposalId, decisions: HumanDecision[]"
+      >
+        <GalleryVariantRow label="Every ProposalStatus value">
+          <ProposalStatusBadge status="draft" />
+          <ProposalStatusBadge status="ready_for_review" />
+          <ProposalStatusBadge status="stale" />
+          <ProposalStatusBadge status="conflicted" />
+          <ProposalStatusBadge status="decision_pending" />
+          <ProposalStatusBadge status="approved" />
+          <ProposalStatusBadge status="rejected" />
+          <ProposalStatusBadge status="deferred" />
+          <ProposalStatusBadge status="overridden" />
+        </GalleryVariantRow>
+        <GalleryVariantRow label="DecisionHistory (collapsed by default)">
+          <div className="w-full max-w-md">
+            <DecisionHistory
+              proposalId={galleryFinalizedProposal.id}
+              decisions={galleryFinalizedProposal.decisionHistory ?? []}
+              onEmitHistoryOpen={onEmitUIEvent}
+            />
+          </div>
+        </GalleryVariantRow>
+      </GalleryEntry>
+
+      <GalleryEntry
+        id="pending-human-interaction-summary"
+        name="PendingHumanInteractionSummary"
+        description="Compact entry point for the shallow PendingInteraction summary contract — for composing into a list of things waiting on a human (e.g. a Mission Center panel). Never renders the full detail itself; routes to the concrete component via onOpen."
+        inputModel="interaction: PendingInteraction, onOpen?"
+      >
+        <GalleryVariantRow label="Execution permission + proposal review, both pending">
+          <div className="flex w-full max-w-md flex-col gap-2">
+            {galleryPendingInteractions.map((interaction) => (
+              <PendingHumanInteractionSummary key={interaction.id} interaction={interaction} />
+            ))}
           </div>
         </GalleryVariantRow>
       </GalleryEntry>
