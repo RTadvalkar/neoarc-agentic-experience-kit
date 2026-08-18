@@ -65,7 +65,7 @@ export function RenderCanvas({
       scenario.family === "runtime"
         ? runtimeNodeDefinitions
         : scenario.family === "trace"
-          ? [...traceNodeDefinitions, ...provenanceNodeDefinitions, ...activityNodeDefinitions]
+          ? [...traceNodeDefinitions, ...provenanceNodeDefinitions, ...activityNodeDefinitions, ...runtimeNodeDefinitions]
           : conversationNodeDefinitions
     const store = applyEvents(createProjectionStore(), visibleEvents as readonly AgenticEventEnvelope[], definitions)
     return selectNodes(store).filter((node) => node.target === target)
