@@ -1,0 +1,91 @@
+/**
+ * neoarc-agentic-ui / styles / tokens.css
+ *
+ * Canonical semantic design-token contract for the NeoArc Agentic
+ * Experience Kit. This file is OWNED by the reusable UI package, not by any
+ * showcase application — see Correction 1 in
+ * docs/implementation/MASTER_IMPLEMENTATION_PLAN.md.
+ *
+ * Every token here is namespaced with `--neoarc-` so components can consume
+ * them directly (e.g. `bg-[var(--neoarc-color-surface)]`) without requiring
+ * a consuming app to map them into its own Tailwind theme. A showcase host
+ * MAY additionally map these into a Tailwind `@theme` block for its own
+ * chrome — see app/globals.css — but the kit does not depend on that
+ * mapping existing.
+ *
+ * Values here are LIGHT theme defaults. Dark theme overrides live in
+ * themes.css. Palette is intentionally a restrained neutral (graphite) base
+ * with a single measured accent — no permanent NeoArc brand palette is
+ * invented here; products may override these variables entirely.
+ */
+
+:root {
+  color-scheme: light;
+
+  /* Surfaces */
+  --neoarc-color-background: oklch(0.99 0 0);
+  --neoarc-color-surface: oklch(1 0 0);
+  --neoarc-color-surface-raised: oklch(1 0 0);
+  --neoarc-color-surface-muted: oklch(0.965 0.002 247);
+  --neoarc-color-overlay: oklch(0.145 0.005 247 / 0.45);
+
+  /* Text */
+  --neoarc-color-foreground: oklch(0.2 0.01 247);
+  --neoarc-color-foreground-muted: oklch(0.46 0.012 247);
+  --neoarc-color-foreground-subtle: oklch(0.6 0.01 247);
+
+  /* Borders */
+  --neoarc-color-border: oklch(0.9 0.004 247);
+  --neoarc-color-border-muted: oklch(0.94 0.003 247);
+  --neoarc-color-border-strong: oklch(0.78 0.006 247);
+
+  /* Accent — measured, single-hue, enterprise blue */
+  --neoarc-color-accent: oklch(0.5 0.15 255);
+  --neoarc-color-accent-foreground: oklch(0.99 0 0);
+  --neoarc-color-accent-muted: oklch(0.94 0.03 255);
+
+  /* Semantic states */
+  --neoarc-color-success: oklch(0.52 0.13 152);
+  --neoarc-color-success-foreground: oklch(0.99 0 0);
+  --neoarc-color-success-muted: oklch(0.95 0.04 152);
+
+  --neoarc-color-warning: oklch(0.65 0.15 75);
+  --neoarc-color-warning-foreground: oklch(0.18 0.01 75);
+  --neoarc-color-warning-muted: oklch(0.95 0.06 85);
+
+  --neoarc-color-danger: oklch(0.55 0.2 25);
+  --neoarc-color-danger-foreground: oklch(0.99 0 0);
+  --neoarc-color-danger-muted: oklch(0.95 0.05 25);
+
+  --neoarc-color-info: oklch(0.55 0.11 235);
+  --neoarc-color-info-foreground: oklch(0.99 0 0);
+  --neoarc-color-info-muted: oklch(0.95 0.03 235);
+
+  /* Focus */
+  --neoarc-color-focus-ring: oklch(0.55 0.16 255);
+
+  /* Radius */
+  --neoarc-radius-sm: 0.25rem;
+  --neoarc-radius-md: 0.5rem;
+  --neoarc-radius-lg: 0.75rem;
+  --neoarc-radius-full: 999px;
+
+  /* Elevation */
+  --neoarc-elevation-1: 0 1px 2px oklch(0.145 0.005 247 / 0.06);
+  --neoarc-elevation-2: 0 2px 8px oklch(0.145 0.005 247 / 0.08);
+  --neoarc-elevation-3: 0 8px 24px oklch(0.145 0.005 247 / 0.12);
+
+  /* Spacing (supplementary to Tailwind's spacing scale) */
+  --neoarc-space-1: 0.25rem;
+  --neoarc-space-2: 0.5rem;
+  --neoarc-space-3: 0.75rem;
+  --neoarc-space-4: 1rem;
+  --neoarc-space-6: 1.5rem;
+  --neoarc-space-8: 2rem;
+
+  /* Typography */
+  --neoarc-font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --neoarc-font-mono: ui-monospace, "SF Mono", "Cascadia Code", monospace;
+  --neoarc-leading-normal: 1.5;
+  --neoarc-leading-relaxed: 1.6;
+}
