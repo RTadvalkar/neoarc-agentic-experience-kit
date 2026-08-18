@@ -13,12 +13,22 @@
  */
 
 import { applyEvents, createProjectionStore, selectNodes } from "../../../src/neoarc-agentic-projection/projection-store"
-import type { AgenticNodeDefinition, AgenticViewNode } from "../../../src/neoarc-agentic-projection/types"
+import type { AgenticNodeDefinition, AgenticViewNode, AgenticViewTarget } from "../../../src/neoarc-agentic-projection/types"
 import type { AgenticEventEnvelope } from "../../../src/neoarc-agentic-contracts/events"
 
+/**
+ * `target` is filtered post-projection (never used to skip a definition
+ * pre-match), mirroring `render-canvas.tsx`'s own
+ * `selectNodes(store).filter((node) => node.target === target)` — the
+ * union-of-definitions design means one shared event list can legitimately
+ * project nodes for several targets, so filtering happens after the fold,
+ * not by trimming the definitions list per call site.
+ */
 export function projectScenarioNodes(
   events: readonly AgenticEventEnvelope[],
   definitions: readonly AgenticNodeDefinition<unknown, unknown>[],
+  target?: AgenticViewTarget,
 ): readonly AgenticViewNode[] {
-  return selectNodes(applyEvents(createProjectionStore(), events, definitions))
+  const nodes = selectNodes(applyEvents(createProjectionStore(), events, definitions))
+  return target ? nodes.filter((node) => node.target === target) : nodes
 }

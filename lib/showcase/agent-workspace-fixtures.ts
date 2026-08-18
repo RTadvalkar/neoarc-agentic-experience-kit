@@ -41,7 +41,7 @@ export const workspaceJourneyStages: readonly WorkspaceJourneyStage[] = [
   { id: "clarification", label: "Clarification", threshold: 14 },
   { id: "knowledge", label: "Knowledge & relationships", threshold: 17 },
   { id: "permission", label: "Execution permission", threshold: 25 },
-  { id: "retry", label: "Tool retry", threshold: 27 },
+  { id: "retry", label: "Tool retry", threshold: 28 },
   { id: "proposal", label: "Proposal review", threshold: 34 },
   { id: "artifacts", label: "Artifacts produced", threshold: 36 },
   { id: "completed", label: "Completed", threshold: 44 },
@@ -65,6 +65,7 @@ export const workspaceClarification: ClarificationRequest = {
 
 export const workspaceExecutionPermission: ExecutionPermissionRequestPending = {
   id: "workspace-permission-1",
+  status: "pending",
   action: {
     toolName: "provision-sandbox-environment",
     actionSummary: "Provision an ephemeral sandbox to trial the async order-events topic",
