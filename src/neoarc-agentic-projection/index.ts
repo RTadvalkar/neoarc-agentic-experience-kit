@@ -10,3 +10,5 @@
 export * from "./types"
 export * from "./renderer-registry"
 export * from "./surface-registry"
+export * from "./projection-store"
+export * from "./conversation-node-definitions"
