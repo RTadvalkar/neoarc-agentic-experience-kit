@@ -45,13 +45,37 @@ export default function Home() {
           ))}
         </div>
 
-        <Link
-          href="/execution-lab"
-          className="inline-flex w-fit items-center gap-2 rounded-[var(--neoarc-radius-md)] bg-[var(--neoarc-color-accent)] px-4 py-2 text-sm font-medium text-[var(--neoarc-color-accent-foreground)] hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--neoarc-color-focus-ring)]"
-        >
-          Open Execution Lab
-          <ArrowRight className="size-3.5" aria-hidden="true" />
-        </Link>
+        <div className="flex flex-wrap gap-3">
+          <Link
+            href="/execution-lab"
+            className="inline-flex w-fit items-center gap-2 rounded-[var(--neoarc-radius-md)] bg-[var(--neoarc-color-accent)] px-4 py-2 text-sm font-medium text-[var(--neoarc-color-accent-foreground)] hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--neoarc-color-focus-ring)]"
+          >
+            Open Execution Lab
+            <ArrowRight className="size-3.5" aria-hidden="true" />
+          </Link>
+        </div>
+
+        <div className="flex flex-col gap-3 border-t border-[var(--neoarc-color-border)] pt-6">
+          <span className="text-xs font-medium uppercase tracking-wide text-[var(--neoarc-color-foreground-subtle)]">
+            Reference experiences — showcase only
+          </span>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Link
+              href="/agent-workspace"
+              className="inline-flex flex-1 items-center justify-between gap-2 rounded-[var(--neoarc-radius-md)] border border-[var(--neoarc-color-border)] bg-[var(--neoarc-color-surface)] px-4 py-3 text-sm font-medium text-[var(--neoarc-color-foreground)] hover:bg-[var(--neoarc-color-surface-muted)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--neoarc-color-focus-ring)]"
+            >
+              Agent Workspace
+              <ArrowRight className="size-3.5 text-[var(--neoarc-color-foreground-muted)]" aria-hidden="true" />
+            </Link>
+            <Link
+              href="/execution-investigation"
+              className="inline-flex flex-1 items-center justify-between gap-2 rounded-[var(--neoarc-radius-md)] border border-[var(--neoarc-color-border)] bg-[var(--neoarc-color-surface)] px-4 py-3 text-sm font-medium text-[var(--neoarc-color-foreground)] hover:bg-[var(--neoarc-color-surface-muted)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--neoarc-color-focus-ring)]"
+            >
+              Execution Investigation
+              <ArrowRight className="size-3.5 text-[var(--neoarc-color-foreground-muted)]" aria-hidden="true" />
+            </Link>
+          </div>
+        </div>
       </main>
     </div>
   )

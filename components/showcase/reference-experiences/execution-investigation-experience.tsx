@@ -168,7 +168,7 @@ export function ExecutionInvestigationExperience() {
           <MissionHeader mission={investigationMission} />
         </Surface>
 
-        <div className="grid flex-1 grid-cols-1 gap-4 lg:grid-cols-[1.6fr_1fr]">
+        <div className="flex flex-1 flex-col gap-4">
           <Surface className="flex min-h-0 flex-1 flex-col gap-3 p-4">
             <Tabs defaultValue="conversation">
               <TabsList>
@@ -215,7 +215,11 @@ export function ExecutionInvestigationExperience() {
                   </div>
                 ) : null}
                 {traceEvents.length > 0 ? (
-                  <TraceExplorer events={traceEvents} />
+                  <TraceExplorer
+                    events={traceEvents}
+                    selectedEventId={selectedEventId}
+                    onEmitEvent={handleTraceEmitEvent}
+                  />
                 ) : (
                   <EmptyState title="No trace events yet" description="Press Play or Step Forward to start the session." />
                 )}
@@ -235,42 +239,18 @@ export function ExecutionInvestigationExperience() {
             </Tabs>
           </Surface>
 
-          <div className="flex min-h-0 flex-col gap-4">
-            <Surface className="flex flex-col gap-3 p-4">
-              <SectionHeader title="Trace events" description="Select a row in the Trace tab to inspect its normalized event." />
-              <div className="max-h-72 overflow-auto">
-                {traceEvents.length === 0 ? (
-                  <EmptyState title="Nothing to inspect" />
-                ) : (
-                  <ul className="flex flex-col gap-1">
-                    {traceEvents.map((event) => {
-                      const node = traceNodes.find((candidate) => candidate.kind === "trace.event" && (candidate.data as TraceEvent).id === event.id)
-                      const isSelected = selectedNode?.key === node?.key
-                      return (
-                        <li key={event.id}>
-                          <button
-                            type="button"
-                            onClick={() => setSelectedNode(node)}
-                            aria-pressed={isSelected}
-                            className="flex w-full items-center justify-between gap-2 rounded-md px-2 py-1 text-left text-xs hover:bg-[var(--neoarc-color-surface-muted)] aria-pressed:bg-[var(--neoarc-color-surface-muted)]"
-                          >
-                            <span className="truncate text-[var(--neoarc-color-foreground-muted)]">{event.detail.kind}</span>
-                          </button>
-                        </li>
-                      )
-                    })}
-                  </ul>
-                )}
-              </div>
-            </Surface>
-
+          <Surface className="flex flex-col gap-3 p-4">
+            <SectionHeader
+              title="Projection seam"
+              description="Select a row in the Trace tab to inspect the normalized event it was projected from."
+            />
             <IntegrationInspector
               normalizedEvent={latestEvent}
-              projectedNode={selectedNode}
+              projectedNode={selectedTraceNode}
               handlerNote="This page owns no pending human-interaction state — see the Agent Workspace experience for the ClarificationCard / ExecutionPermissionCard / ProposalViewer handler boundary."
               boundaryNote="AgentConversation, ActivitySummaryList, TraceExplorer, TraceUsageSummary, TraceTimingSummary, ProvenanceExplorer, and MissionHeader all ship from neoarc-agentic-ui; the four node-definition modules ship from neoarc-agentic-projection. The replay engine, event fixtures, and this composition are showcase-only."
             />
-          </div>
+          </Surface>
         </div>
       </main>
     </div>
