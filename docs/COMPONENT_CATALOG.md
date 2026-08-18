@@ -1,14 +1,16 @@
 # Component Catalog
 
-Status: Slice 1 (Foundation). Updated by every later slice — see
-`docs/implementation/EXECUTION_STATUS.md` for what slice this repo is
-currently on.
+Status: Slice 1 (Foundation) + Slice 2 (Conversation & Replay). Updated by
+every later slice — see `docs/implementation/EXECUTION_STATUS.md` for what
+slice this repo is currently on.
 
 This catalog documents every component in `src/neoarc-agentic-ui`. For each
 component: purpose, input model, supported states, semantic events (if any),
 trace visibility notes, and where to find its fixture/usage example.
 
-All components below live in `src/neoarc-agentic-ui/foundation/` and are
+## Foundation family
+
+The components below live in `src/neoarc-agentic-ui/foundation/` and are
 exported from `src/neoarc-agentic-ui` (barrel) and
 `src/neoarc-agentic-ui/foundation` (family barrel). All are pure, controlled,
 framework-neutral React components — no networking, no Next.js APIs, no
@@ -328,6 +330,406 @@ content is scoped to. Labels only — never enforces access.
 **Trace visibility:** this IS a trace-visibility component — it is not
 security-authoritative (see `docs/02B_INSTRUCTION_UX_TRACEABILITY_AND_HUMAN_CONTROL.md`
 §Trace access and redaction).
+
+---
+
+## Conversation family
+
+The components below live in `src/neoarc-agentic-ui/conversation/` and are
+exported from `src/neoarc-agentic-ui` (barrel) and
+`src/neoarc-agentic-ui/conversation` (family barrel). All are pure,
+controlled, framework-neutral React components — no networking, no Next.js
+APIs. `neoarc-agentic-ui` remains usable without `neoarc-agentic-projection`:
+every component here renders from the normalized `ConversationTimelineItem`/
+`ConversationMessage` models in `neoarc-agentic-contracts/conversation.ts`
+directly, with one deliberate exception noted on `GenericAgenticNodeFallback`
+below. A product adapter may build these models straight from its own DTOs,
+or unwrap them from `AgenticViewNode.data` via
+`neoarc-agentic-projection`'s built-in `conversationNodeDefinitions` — either
+path hands this family the identical shape (docs/02A §Integration modes).
+See `docs/04_CONVERSATION_PROJECTION_REPLAY.prompt.md` for the full model
+this family renders, and `app/execution-lab` (Scenario Replay mode) for
+every component composed together against real fixture data.
+
+---
+
+### AgentConversation
+
+**Purpose:** the controlled root of a conversation — renders an ordered
+`ConversationTimelineItem[]` and is the one component both integration
+modes (direct view model, or projected via `neoarc-agentic-projection`)
+converge on.
+
+**Input model:** `items: ConversationTimelineItem[]`, optional
+`onEmitEvent`, `emptyState` (defaults to `ConversationEmptyState`),
+`className`.
+
+**States:** empty (`items.length === 0`, renders `emptyState`); populated,
+dispatching each item to its own presentational component by `item.kind`.
+
+**Semantic events:** forwards every conversation UI event a child component
+emits (`citation.open`, `artifact.open`, `attachment.open`, `handoff.open`,
+`toolActivity.toggle`, `clarification.submit`, `conversation.stop.request`,
+`conversation.retry.request`) through the single `onEmitEvent` callback —
+the product adapter wires up one dispatcher, not nine props.
+
+**Trace visibility:** none directly — see individual item components.
+
+**Note:** the internal `switch (item.kind)` is a closed, ten-case dispatch
+owned entirely by this one component for its own known item kinds. It is
+not the kit-wide "central mega-switch" the architecture rules forbid — that
+anti-pattern is a single switch spanning unrelated feature-owned node
+families across the whole kit. Registering a new, unrelated node family
+elsewhere never requires touching this file. The dispatch logic is also
+exported standalone as `renderConversationTimelineItem` so a
+`RendererRegistry` adapter can render one `AgenticViewNode` identically to
+how this component renders the same item inside a full array.
+
+**Example:** `app/execution-lab` Scenario Replay mode, every fixture in
+`lib/showcase/conversation-fixtures.ts`.
+
+---
+
+### ConversationMessage
+
+**Purpose:** route one `ConversationMessage` to `HumanMessage` or
+`AgentResponse` based on `author.kind`, so neither of those components has
+to branch on author internally.
+
+**Input model:** `message: ConversationMessage`, plus every event callback
+`AgentResponse` accepts (forwarded as-is; unused when the author is human).
+
+**States:** human author; agent author.
+
+**Semantic events:** forwarded from `AgentResponse` when the author is an
+agent; none when the author is human.
+
+**Trace visibility:** none directly.
+
+---
+
+### HumanMessage
+
+**Purpose:** render one human-authored message — right-aligned, no
+citations/tool/handoff chrome, since a human message never carries
+agent-only fields.
+
+**Input model:** `message: ConversationMessage` (`author.kind === "human"`).
+
+**States:** with/without attachments.
+
+**Semantic events:** none — a human message never emits an event itself.
+
+**Trace visibility:** none.
+
+---
+
+### AgentResponse
+
+**Purpose:** render one agent-authored message, including its streaming
+state, citations, attachments, artifacts, and stop/retry actions. The single
+place all agent-message chrome composes.
+
+**Input model:** `message: ConversationMessage` (`author.kind !== "human"`),
+`onEmitCitationEvent`, `onEmitAttachmentEvent`, `onEmitArtifactEvent`,
+`onEmitStopEvent`, `onEmitRetryEvent` (all optional).
+
+**States:** streaming (`message.streaming === true`, shows a spinner);
+terminal completed/failed/cancelled (via `message.status`); with/without
+citations/attachments/artifacts.
+
+**Semantic events:** forwards `"citation.open"`, `"attachment.open"`,
+`"artifact.open"` from its child components, and
+`"conversation.stop.request"` / `"conversation.retry.request"` from
+`ResponseActions`.
+
+**Trace visibility:** none directly — never fabricates a citation or
+confidence score; only ever displays what `message` supplies.
+
+**Example:** `conversation-streaming-assistant` and
+`conversation-ordinary-exchange` fixtures.
+
+---
+
+### MessageContentRenderer
+
+**Purpose:** render a message's `content` block list (`TextBlock` /
+`MarkdownBlock`) safely, using a minimal dependency-free inline formatter
+(bold, italic, inline code, links) rather than a full CommonMark
+dependency.
+
+**Input model:** `blocks: MessageContentBlock[]`.
+
+**States:** text block; markdown block with any combination of inline
+formatting.
+
+**Semantic events:** none.
+
+**Trace visibility:** none.
+
+**Security note:** never uses `dangerouslySetInnerHTML` — inline formatting
+is parsed into a plain React node tree, so arbitrary HTML in supplied
+content renders as literal text, never executes.
+
+---
+
+### AgentComposer
+
+**Purpose:** the message input for `AgentConversation`. Manages its own
+draft text as ephemeral internal UI state (never a normalized model a
+product adapter needs to control) and emits typed events for send/stop.
+
+**Input model:** optional `disabled`, `placeholder`, `isResponding`,
+`respondingMessageId`, `onEmitSendEvent`, `onEmitStopEvent`.
+
+**States:** idle; disabled; responding (renders a Stop control in place of
+Send).
+
+**Semantic events:** emits `"conversation.message.send"` and, while
+`isResponding`, `"conversation.stop.request"` — this is the
+conversation-level "stop the current turn" control; per-message stop lives
+on `ResponseActions` instead.
+
+**Trace visibility:** none.
+
+**Accessibility note:** Enter submits, Shift+Enter inserts a newline, and
+the submit guard checks `event.nativeEvent.isComposing` (plus Safari's
+unreliable keyCode 229) so confirming CJK IME composition never submits
+early.
+
+---
+
+### ClarificationCard
+
+**Purpose:** render one pending-or-resolved clarification request. Pending
+clarifications with supplied `options` render a choice list; without
+options, a free-text field is offered. Resolved clarifications render the
+supplied resolution and never re-offer input.
+
+**Input model:** `clarification: ClarificationRequest`, optional
+`onEmitEvent`.
+
+**States:** pending with options; pending free-text; resolved.
+
+**Semantic events:** emits `"clarification.submit"`. Submitting is a
+request only — the product adapter owns whether the backend records the
+resolution and must feed it back through `clarification.resolved`.
+
+**Trace visibility:** none directly — this is one of the "human
+interaction" presentation intents from `02B §Human interaction`.
+
+**Example:** `conversation-clarification` fixture.
+
+---
+
+### ActivitySummaryList
+
+**Purpose:** render one or more safe "what is the agent doing right now"
+summaries — never a chain-of-thought fragment (see
+`docs/TRACEABILITY_PRINCIPLES.md` §1). Used both as the renderer for a
+single `conversation.activity` projected node and standalone for showing
+several activity summaries at once.
+
+**Input model:** `items: ActivitySummary[]`.
+
+**States:** running (spinner); any other status (static dot).
+
+**Semantic events:** none — pure display.
+
+**Trace visibility:** this IS a trace-visibility-conscious component in the
+sense that it only ever shows supplied safe summaries, never raw model
+reasoning.
+
+---
+
+### ToolActivityDisclosure
+
+**Purpose:** render one supplied tool activity summary as a collapsible
+disclosure — collapsed by default, expandable to show the supplied summary
+text. Never assumes raw tool input/output is safe to render; only ever
+shows the product-supplied safe summary string.
+
+**Input model:** `tool: ToolActivitySummary`, optional controlled `open`
+(uncontrolled internal state when omitted), optional `onEmitEvent`.
+
+**States:** collapsed; expanded; running/completed/failed (via the composed
+`RuntimeStatusBadge`).
+
+**Semantic events:** emits `"toolActivity.toggle"` on every expand/collapse.
+
+**Trace visibility:** never renders raw tool payloads — only the supplied
+safe `summary` string.
+
+**Example:** `conversation-tool-activity` fixture.
+
+---
+
+### CitationGroup
+
+**Purpose:** render a message's supplied citations as a compact group of
+chips. Never fabricates a citation, never shows a confidence/score unless
+one is supplied elsewhere.
+
+**Input model:** `citations: CitationRef[]`, optional `onEmitEvent`.
+
+**States:** any number of citations (zero renders nothing).
+
+**Semantic events:** emits `"citation.open"` when a citation is opened.
+
+**Trace visibility:** displays only what it is given — see
+`docs/08_EVIDENCE_CITATIONS_AND_ARTIFACTS.prompt.md` for the fuller Slice 6
+evidence model this composes into.
+
+**Example:** `conversation-ordinary-exchange` fixture.
+
+---
+
+### AttachmentList
+
+**Purpose:** render a message's supplied attachment references. Never
+assumes file content is safe to preview inline — only shows name/type/size
+and defers to the product adapter, via the emitted event, to decide how
+opening is handled.
+
+**Input model:** `attachments: AttachmentRef[]`, optional `onEmitEvent`.
+
+**States:** any number of attachments (zero renders nothing); with/without
+a supplied size.
+
+**Semantic events:** emits `"attachment.open"`.
+
+**Trace visibility:** none — attachment metadata only, never inline
+content.
+
+---
+
+### ArtifactReferenceCard
+
+**Purpose:** render a single supplied artifact reference (document,
+diagram, code change, ...). Reused both inline on `AgentResponse`
+(`message.artifacts`) and as the renderer for the standalone
+`conversation.artifact` projected node kind — same component, same data
+shape either way.
+
+**Input model:** `artifact: ArtifactRef`, optional `onEmitEvent`.
+
+**States:** with/without `status`; with/without `version`.
+
+**Semantic events:** emits `"artifact.open"`.
+
+**Trace visibility:** none directly.
+
+**Example:** `conversation-async-work` fixture.
+
+---
+
+### AgentHandoffCard
+
+**Purpose:** render a supplied agent-to-agent handoff summary — who handed
+off to whom, why (if supplied), and current status. Never infers a reason
+or fabricates the receiving agent.
+
+**Input model:** `handoff: HandoffSummary`, optional `onEmitEvent`.
+
+**States:** with/without a supplied `reason`; running/completed status via
+`RuntimeStatusBadge`.
+
+**Semantic events:** emits `"handoff.open"`.
+
+**Trace visibility:** none directly — every field shown is supplied, never
+inferred.
+
+**Example:** `conversation-handoff` fixture.
+
+---
+
+### AsyncWorkCard
+
+**Purpose:** render a supplied async-work summary — work proceeding outside
+the current turn (e.g. a long-running background job). Direct-view-model
+only: there is no built-in `conversation.async-work` projected node kind in
+Slice 2's ten kinds, so this component is always driven from a supplied
+`AsyncWorkSummary` directly, never unwrapped from a projected node.
+
+**Input model:** `work: AsyncWorkSummary`.
+
+**States:** with/without a supplied `etaLabel`; any `RuntimeStatus`.
+
+**Semantic events:** none — a pure status display. A product wanting a
+"view details" action wraps this component with its own control.
+
+**Trace visibility:** none.
+
+---
+
+### ResponseActions
+
+**Purpose:** the small action row under an in-progress or failed agent
+response — "Stop" while running/queued, "Retry" while failed. Renders
+nothing for any other status; the kit never shows an action the current
+state does not honestly support.
+
+**Input model:** `messageId: OpaqueId`, optional `status: RuntimeStatus`,
+`onEmitStopEvent`, `onEmitRetryEvent`.
+
+**States:** running/queued (Stop); failed (Retry); any other status
+(renders nothing).
+
+**Semantic events:** emits `"conversation.stop.request"` /
+`"conversation.retry.request"`. Emitting either is a request only — the
+product adapter owns whether the backend actually stops/retries and must
+feed the authoritative result back through `status`.
+
+**Trace visibility:** none.
+
+---
+
+### ConversationEmptyState
+
+**Purpose:** the "nothing here yet" state for an empty `AgentConversation`
+— composes the foundation `EmptyState` rather than duplicating its layout,
+differing only in default copy/icon.
+
+**Input model:** optional `title`/`description` overrides.
+
+**States:** default copy; overridden copy.
+
+**Semantic events:** none.
+
+**Trace visibility:** none.
+
+**Example:** `conversation-empty` fixture.
+
+---
+
+### GenericAgenticNodeFallback
+
+**Purpose:** the reusable, kit-owned fallback renderer for any
+`AgenticViewNode` whose `(target, kind)` has no specific registration in a
+`RendererRegistry` — registering this via `registry.registerFallback(...)`
+is what lets an unknown node kind render safely instead of throwing or
+disappearing. See `docs/RENDERER_REGISTRY.md`.
+
+**Input model:** `node: AgenticViewNode`, optional `onSelect`, `selected`.
+
+**States:** selected/unselected; underlying `data` looks like an
+`AgenticEventEnvelope` (shows its type + timestamp) or does not (shows the
+node's own `key`).
+
+**Semantic events:** none — `onSelect` is a plain callback, not a semantic
+UI event, matching the Execution Lab's node-inspection use case.
+
+**Trace visibility:** must stay correct for any node shape; only ever shows
+identity fields (`key`/`kind`/`target`) plus, when present, the envelope's
+own type/timestamp — never assumes a specific payload shape.
+
+**Portability note:** the one deliberate exception in this family — every
+other conversation component has zero dependency on
+`neoarc-agentic-projection`, but this component's entire purpose is to
+render an `AgenticViewNode`, so it imports that one type from the
+projection package. `neoarc-agentic-ui` remains usable without
+`neoarc-agentic-projection` for every other component; a consumer who never
+uses projection simply never imports this file.
 
 ---
 

@@ -30,9 +30,26 @@ a projector that processes events one-by-one (live append) and one that
 processes the same events all at once (full replay) must converge on the
 same set of nodes keyed the same way. Slice 1 ships the seam and a single
 foundation-scenario projector (`lib/showcase/generic-projector.ts`) as a
-worked example; deterministic replay-convergence tests are formalized
-starting in Slice 2 once a stateful node family (conversation) exists to
-test against.
+worked example.
+
+Slice 2 formalizes this as deterministic tests against the built-in
+conversation node family (`src/neoarc-agentic-projection/conversation-node-definitions.ts`),
+run with Node's built-in test runner (`npm test`, or directly via
+`node --test src/neoarc-agentic-projection/*.test.mts`):
+
+- `projection-store.test.mts` — proves the invariant at the generic-reducer
+  level with a domain-independent synthetic node family: full replay and
+  live append converge, re-projecting a key updates in place without
+  reordering, an unmatched event leaves the store unchanged, `applyEvent`
+  never mutates its input, and resuming from an intermediate store
+  converges with a from-scratch replay.
+- `conversation-node-definitions.test.mts` — runs the same convergence
+  proof against every Execution Lab fixture scenario
+  (`lib/showcase/conversation-fixtures.ts`), plus per-kind stable-identity
+  assertions (a streaming message merges three deltas into one node; a
+  tool/clarification/handoff node updates in place across its lifecycle;
+  one-shot kinds — notice/error/retry — key off the event's own id while
+  accumulating kinds key off the business id in the payload).
 
 ## Renderer Registry (`renderer-registry.ts`)
 
