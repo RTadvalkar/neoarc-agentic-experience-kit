@@ -1,4 +1,4 @@
-# Data Model (Slice 1 — Foundation, Slice 2 — Conversation & Replay)
+# Data Model (Slice 1 — Foundation, Slice 2 — Conversation & Replay, Slice 5 — Trace & Provenance)
 
 Owning package: `src/neoarc-agentic-contracts`. Plain TypeScript, zero
 framework/runtime dependencies. Every type here is a **normalized view
@@ -74,6 +74,40 @@ in; see the module doc comment in `conversation.ts` and
 | `ConversationMessage` | `id, author, createdAt, content, citations?, attachments?, artifacts?, status?, streaming?, correlation?` | One shape for both human and agent authors; `author.kind` decides rendering. `streaming: true` marks a message still receiving `conversation.message.delta` events. |
 | `ConversationTimelineItem` | discriminated union of 10 kinds | `ConversationItemKind` mirrors the ten built-in projected node kinds 1:1: `user-message, agent-message, activity, tool, clarification, handoff, artifact, notice, error, retry`. |
 | `ConversationThread` | `id, items` | The direct-path root value. |
+
+## Trace & Provenance models (`trace.ts`, `provenance.ts`, Slice 5)
+
+See `TRACE_MODEL.md`, `PROVENANCE_MODEL.md`, and `TRACE_ACCESS_AND_REDACTION.md`
+for the full picture. Summarized here: `trace.ts` models chronological,
+forensic execution facts (`TraceEvent`, one per observable event, grouped
+by `TraceTurn`/`TraceStep`); `provenance.ts` models lineage instead — the
+same underlying facts, connected as a graph rather than a timeline.
+Deliberately reuses rather than re-declares: `RunError` (`runtime.ts`),
+`ArtifactRef`/`ActivitySummary` (`conversation.ts`), `ToolActionIdentity`
+(`human-interaction.ts`), `EvidenceSummary` (`proposal.ts`).
+
+| Type | Key fields | Notes |
+|---|---|---|
+| `TraceEventKind` | 15-member union (`system-instruction, user-input, context, runtime-recipe, model-policy, resolved-model, knowledge, relationship, tool, agent-activity, human-interaction, proposal, artifact, error, retry`) | No `"reasoning"` kind — chain-of-thought is structurally unrepresentable, not just avoided by convention. |
+| `TraceEventDetail` | discriminated union keyed by `kind`, mirroring `TraceEventKind` | Consumers narrow through a closed switch (`TraceInspector`) — never a fallthrough default that guesses shape. |
+| `TraceModelRoute` | `modelId, provider?, version?` | Always `AvailableOr`-wrapped in `TraceEventDetail` — resolved-model visibility is permission-aware, not a plain optional field. |
+| `KnowledgeUsageCategory` | `retrieved \| selected \| supplied \| cited` | Never collapsed into a single "used" concept — see Gate 5. |
+| `KnowledgeUsage` | `knowledgeId?, title?, sourceType?, usageCategory, score?` | `score` is optional and never computed/defaulted when absent. |
+| `RelationshipUsageCategory` | `retrieval \| context \| evidence \| impact` | Importance is never inferred solely from traversal — `usageCategory` must be supplied. |
+| `RelationshipUsage` | `relationshipId?, sourceEntity, predicate, targetEntity, traversalDepth?, usageCategory` | |
+| `HumanInteractionTraceDomain` | `clarification \| execution-permission` | Deliberately excludes business decisions — those project to the separate `"proposal"` `TraceEventKind` so the two approval domains stay visually distinct. |
+| `TraceEvent` | `id, occurredAt, detail, actor?, correlation?` | Trace is an append-only chronological log — there is no separate accumulating "trace node" business identity the way a run or task has one; `id` is the event's own identity. |
+| `TraceTurn` / `TraceStep` | `id, (turnId,) label?, occurredAt, eventIds` | Stable groupings that reference events by id — never duplicate event content. |
+| `ExecutionTraceSummary` | `id, startedAt, completedAt?, status, accessLevel, usage?, timing?` | `accessLevel` documents which `TraceAccessLevel` the supplied data already reflects — descriptive, never enforced by the UI. |
+| `ProvenanceEntityKind` | 9-member union (`intent, mission, task, knowledge, relationship, tool, decision, proposal, artifact`) | Mirrors the User Intent → Mission → Agent Task → Knowledge/Relationships/Tools/Decisions → Proposal → Artifact chain. |
+| `ProvenanceNode` / `ProvenanceEdge` | `id, entityKind, label, occurredAt?, correlation?` / `id, fromNodeId, toNodeId, relation` | `relation` is a free-form label the adapter supplies — never inferred from node ordering or timing proximity. |
+| `ProvenanceLineage` | `nodes, edges` | Only ever contains supplied nodes/edges — an absent edge means absent, never "not yet computed". |
+| `EvidenceLineageEntry` / `ArtifactLineageEntry` | `evidence, usage` / `artifact, producedByNodeId?` | Wrap `EvidenceSummary`/`ArtifactRef` rather than duplicating their shape. |
+
+`TraceAccessLevel`/`RedactionState` (`foundation.ts`, listed above) and the
+shared `UnavailableReason`/`AvailableOr` (`shared.ts`) are the primitives
+Trace/Provenance build on for redaction and honest-absence — see
+`TRACE_ACCESS_AND_REDACTION.md`.
 
 ## Composition rules
 
