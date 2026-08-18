@@ -115,19 +115,50 @@ export interface ToolActionIdentity {
 export type ExecutionPermissionOutcome = "allowed_once" | "rejected" | "cancelled" | "unavailable"
 
 /**
- * One execution-permission request. `status` distinguishes "still
- * deciding" (`pending`), "a decision was emitted and we are waiting on the
- * backend" (`submitted`), and "the backend told us what actually happened"
- * (`resolved`) — `outcome` is only meaningful once `status` is `resolved`.
+ * Fields shared by every lifecycle state of an execution-permission
+ * request. Never constructed directly — use `ExecutionPermissionRequest`.
  */
-export interface ExecutionPermissionRequest {
+interface ExecutionPermissionRequestBase {
   readonly id: OpaqueId
   readonly action: ToolActionIdentity
   readonly riskLevel?: RiskLevel
   readonly consequenceSummary?: string
   readonly requestedAt: ISOTimestamp
-  readonly status: InteractionStatus
-  readonly outcome?: ExecutionPermissionOutcome
-  readonly unavailableReason?: string
   readonly correlation?: EventCorrelation
 }
+
+/** Still deciding — no outcome exists yet. */
+export interface ExecutionPermissionRequestPending extends ExecutionPermissionRequestBase {
+  readonly status: "pending"
+}
+
+/** A decision was emitted and the backend has not yet confirmed it — still no outcome. */
+export interface ExecutionPermissionRequestSubmitted extends ExecutionPermissionRequestBase {
+  readonly status: "submitted"
+}
+
+/**
+ * The backend told us what actually happened. `outcome` is REQUIRED here —
+ * this is what makes "resolved without an outcome" unrepresentable.
+ * Execution-permission cancellation is modeled as `status: "resolved"` with
+ * `outcome: "cancelled"`, never as a separate actionable lifecycle status —
+ * see `resolveExecutionPermissionCardMode` in
+ * `neoarc-agentic-ui/human-interaction/human-interaction-logic.ts`.
+ */
+export interface ExecutionPermissionRequestResolved extends ExecutionPermissionRequestBase {
+  readonly status: "resolved"
+  readonly outcome: ExecutionPermissionOutcome
+  readonly unavailableReason?: string
+}
+
+/**
+ * One execution-permission request, modeled as a discriminated union on
+ * `status` so invalid lifecycle/outcome combinations (resolved without an
+ * outcome, or a bare `cancelled` status with no outcome) cannot be
+ * constructed. `outcome` is only ever present — and only ever meaningful —
+ * once `status` is `resolved`.
+ */
+export type ExecutionPermissionRequest =
+  | ExecutionPermissionRequestPending
+  | ExecutionPermissionRequestSubmitted
+  | ExecutionPermissionRequestResolved

@@ -9,8 +9,14 @@
  *   1. `DecisionBar` renders decision actions exactly as supplied, except
  *      it never fabricates an `override` control unless the caller has
  *      actually wired a handler for it.
- *   2. `ExecutionPermissionCard`'s four states are mutually exclusive and
- *      `unavailable` is never conflated with a resolved outcome.
+ *   2. `ExecutionPermissionCard`'s four render modes (`pending`,
+ *      `submitted`, `resolved`, `blocked`) are mutually exclusive and
+ *      `unavailable` is never conflated with a resolved outcome. Each test
+ *      below constructs a literal, legal `ExecutionPermissionRequest` — the
+ *      compile-time guarantee that "resolved" always carries an `outcome`
+ *      and that `status: "cancelled"` cannot exist is asserted separately
+ *      in `human-interaction.type-invariants.ts` (`tsc --noEmit` only, not
+ *      a runtime test).
  *
  * Run with: node --test src/neoarc-agentic-ui/human-interaction/human-interaction-logic.test.mts
  */
@@ -24,6 +30,10 @@ import {
   resolveVisibleDecisionPermissions,
 } from "./human-interaction-logic.ts"
 import type { DecisionPermission } from "../../neoarc-agentic-contracts/proposal.ts"
+import type {
+  ExecutionPermissionOutcome,
+  ExecutionPermissionRequest,
+} from "../../neoarc-agentic-contracts/human-interaction.ts"
 
 test("resolveVisibleDecisionPermissions passes non-override actions through unchanged", () => {
   const permissions: readonly DecisionPermission[] = [
@@ -63,34 +73,59 @@ test("resolveAvailableDecisionActions excludes unavailable actions and unwired o
   assert.deepEqual(resolveAvailableDecisionActions(permissions, true), ["reject", "override"])
 })
 
-test("resolveExecutionPermissionCardMode: pending and submitted both map to 'pending'", () => {
-  assert.equal(resolveExecutionPermissionCardMode({ status: "pending" }), "pending")
-  assert.equal(resolveExecutionPermissionCardMode({ status: "submitted" }), "pending")
-})
+// A minimal fixture for each of the three lifecycle states. Only the fields
+// `resolveExecutionPermissionCardMode` actually inspects are populated —
+// this is the literal, legal `ExecutionPermissionRequest` shape a caller
+// would construct, not a partial `{ status, outcome }` bag. That shape is
+// deliberately unconstructable for "resolved" without an `outcome`, and
+// `status: "cancelled"` is not a member of the union at all — both are
+// enforced by the compiler, not by this test (see
+// `human-interaction.type-invariants.ts`).
+const baseAction = { toolName: "send-email", actionSummary: "Send a confirmation email" }
+const requestedAt = "2026-08-18T09:00:00.000Z"
 
-test("resolveExecutionPermissionCardMode: resolved + unavailable maps to 'blocked', never 'resolved'", () => {
-  assert.equal(resolveExecutionPermissionCardMode({ status: "resolved", outcome: "unavailable" }), "blocked")
-})
-
-test("resolveExecutionPermissionCardMode: resolved + any other outcome maps to 'resolved'", () => {
-  assert.equal(resolveExecutionPermissionCardMode({ status: "resolved", outcome: "allowed_once" }), "resolved")
-  assert.equal(resolveExecutionPermissionCardMode({ status: "resolved", outcome: "rejected" }), "resolved")
-  assert.equal(resolveExecutionPermissionCardMode({ status: "resolved", outcome: "cancelled" }), "resolved")
-})
-
-test("resolveExecutionPermissionCardMode: the four modes are mutually exclusive across every status/outcome combination", () => {
-  const statuses = ["pending", "submitted", "resolved", "cancelled"] as const
-  const outcomes = [undefined, "allowed_once", "rejected", "cancelled", "unavailable"] as const
-  for (const status of statuses) {
-    for (const outcome of outcomes) {
-      const mode = resolveExecutionPermissionCardMode({ status, outcome })
-      if (status !== "resolved") {
-        assert.equal(mode, "pending", `expected 'pending' for status=${status} outcome=${outcome}`)
-      } else if (outcome === "unavailable") {
-        assert.equal(mode, "blocked", `expected 'blocked' for status=${status} outcome=${outcome}`)
-      } else {
-        assert.equal(mode, "resolved", `expected 'resolved' for status=${status} outcome=${outcome}`)
-      }
-    }
+test("resolveExecutionPermissionCardMode: 'pending' status maps to the 'pending' mode", () => {
+  const request: ExecutionPermissionRequest = {
+    id: "req-pending",
+    action: baseAction,
+    requestedAt,
+    status: "pending",
   }
+  assert.equal(resolveExecutionPermissionCardMode(request), "pending")
+})
+
+test("resolveExecutionPermissionCardMode: 'submitted' status maps to its own distinct 'submitted' mode, not 'pending'", () => {
+  const request: ExecutionPermissionRequest = {
+    id: "req-submitted",
+    action: baseAction,
+    requestedAt,
+    status: "submitted",
+  }
+  assert.equal(resolveExecutionPermissionCardMode(request), "submitted")
+})
+
+test("resolveExecutionPermissionCardMode: resolved + a non-unavailable outcome maps to 'resolved'", () => {
+  const outcomes: readonly ExecutionPermissionOutcome[] = ["allowed_once", "rejected", "cancelled"]
+  for (const outcome of outcomes) {
+    const request: ExecutionPermissionRequest = {
+      id: `req-resolved-${outcome}`,
+      action: baseAction,
+      requestedAt,
+      status: "resolved",
+      outcome,
+    }
+    assert.equal(resolveExecutionPermissionCardMode(request), "resolved", `expected 'resolved' for outcome=${outcome}`)
+  }
+})
+
+test("resolveExecutionPermissionCardMode: resolved + 'unavailable' maps to 'blocked', never 'resolved'", () => {
+  const request: ExecutionPermissionRequest = {
+    id: "req-blocked",
+    action: baseAction,
+    requestedAt,
+    status: "resolved",
+    outcome: "unavailable",
+    unavailableReason: "The tool is temporarily disabled.",
+  }
+  assert.equal(resolveExecutionPermissionCardMode(request), "blocked")
 })
