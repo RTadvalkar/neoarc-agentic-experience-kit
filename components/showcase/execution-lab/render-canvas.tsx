@@ -9,15 +9,21 @@
  * `AgenticViewTarget`, then resolves and renders each one through
  * `executionLabRendererRegistry`.
  *
- * Two families:
+ * Scenario families, each selecting which node-definition modules feed
+ * `applyEvents`:
  * - "foundation" (Slice 1): each event maps 1:1 to a `"foundation.event"`
  *   node via the demo `projectFoundationEvent`, which has no specific
  *   registration and always falls back to `GenericFallbackRenderer`.
- * - "conversation" (Slice 2): the sliced events run through the exact same
- *   `applyEvents` reducer + `conversationNodeDefinitions` a real product
- *   integration uses (`neoarc-agentic-projection`), producing real
- *   `AgenticViewNode<ConversationTimelineItem>`s rendered by
- *   `ConversationNodeRenderer`.
+ * - "conversation" (Slice 2): `conversationNodeDefinitions` only.
+ * - "runtime" (Slice 4): `runtimeNodeDefinitions` only.
+ * - "trace" (Slice 5): the union of `traceNodeDefinitions`,
+ *   `provenanceNodeDefinitions`, `activityNodeDefinitions`,
+ *   `runtimeNodeDefinitions`, and `conversationNodeDefinitions` — a trace
+ *   scenario's single event stream can carry `mission.*`/`conversation.*`
+ *   events alongside its trace/provenance/activity ones, so the Mission and
+ *   Chat tabs render real content for it too (not just Trace/Provenance/
+ *   Activity), matching Gate 5's "Architecture Agent Run replays across all
+ *   four views" (docs/11_V0_GATE_CHECKLIST.md).
  */
 
 import { useMemo } from "react"
@@ -65,7 +71,13 @@ export function RenderCanvas({
       scenario.family === "runtime"
         ? runtimeNodeDefinitions
         : scenario.family === "trace"
-          ? [...traceNodeDefinitions, ...provenanceNodeDefinitions, ...activityNodeDefinitions, ...runtimeNodeDefinitions]
+          ? [
+              ...traceNodeDefinitions,
+              ...provenanceNodeDefinitions,
+              ...activityNodeDefinitions,
+              ...runtimeNodeDefinitions,
+              ...conversationNodeDefinitions,
+            ]
           : conversationNodeDefinitions
     const store = applyEvents(createProjectionStore(), visibleEvents as readonly AgenticEventEnvelope[], definitions)
     return selectNodes(store).filter((node) => node.target === target)
