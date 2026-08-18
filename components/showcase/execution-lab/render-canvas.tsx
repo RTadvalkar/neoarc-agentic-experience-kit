@@ -29,6 +29,10 @@ import type { AgenticViewNode, AgenticViewTarget } from "../../../src/neoarc-age
 import { applyEvents, createProjectionStore, selectNodes } from "../../../src/neoarc-agentic-projection/projection-store"
 import { conversationNodeDefinitions } from "../../../src/neoarc-agentic-projection/conversation-node-definitions"
 import { runtimeNodeDefinitions } from "../../../src/neoarc-agentic-projection/runtime-node-definitions"
+import { traceNodeDefinitions } from "../../../src/neoarc-agentic-projection/trace-node-definitions"
+import { provenanceNodeDefinitions } from "../../../src/neoarc-agentic-projection/provenance-node-definitions"
+import { activityNodeDefinitions } from "../../../src/neoarc-agentic-projection/activity-node-definitions"
+import type { AgenticNodeDefinition } from "../../../src/neoarc-agentic-projection/types"
 import { EmptyState } from "../../../src/neoarc-agentic-ui/foundation/empty-state"
 import { projectFoundationEvent } from "../../../lib/showcase/generic-projector"
 import type { AnyExecutionLabScenario } from "../../../lib/showcase/all-scenarios"
@@ -57,7 +61,12 @@ export function RenderCanvas({
     if (scenario.family === "foundation") {
       return (visibleEvents as readonly AgenticEventEnvelope[]).map((event) => projectFoundationEvent(event, target))
     }
-    const definitions = scenario.family === "runtime" ? runtimeNodeDefinitions : conversationNodeDefinitions
+    const definitions: readonly AgenticNodeDefinition<unknown, unknown>[] =
+      scenario.family === "runtime"
+        ? runtimeNodeDefinitions
+        : scenario.family === "trace"
+          ? [...traceNodeDefinitions, ...provenanceNodeDefinitions, ...activityNodeDefinitions]
+          : conversationNodeDefinitions
     const store = applyEvents(createProjectionStore(), visibleEvents as readonly AgenticEventEnvelope[], definitions)
     return selectNodes(store).filter((node) => node.target === target)
   }, [scenario, visibleEvents, target])

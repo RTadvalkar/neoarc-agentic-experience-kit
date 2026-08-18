@@ -13,14 +13,17 @@
 import { executionLabScenarios, type FoundationExecutionLabScenario } from "./fixtures"
 import { conversationExecutionLabScenarios, type ConversationExecutionLabScenario } from "./conversation-fixtures"
 import { runtimeExecutionLabScenarios, type RuntimeExecutionLabScenario } from "./runtime-fixtures"
+import { traceExecutionLabScenarios, type TraceExecutionLabScenario } from "./trace-fixtures"
 
 export type AnyExecutionLabScenario =
   | FoundationExecutionLabScenario
   | ConversationExecutionLabScenario
   | RuntimeExecutionLabScenario
+  | TraceExecutionLabScenario
 
 export const allExecutionLabScenarios: readonly AnyExecutionLabScenario[] = [
   ...conversationExecutionLabScenarios,
   ...runtimeExecutionLabScenarios,
+  ...traceExecutionLabScenarios,
   ...executionLabScenarios,
 ]
