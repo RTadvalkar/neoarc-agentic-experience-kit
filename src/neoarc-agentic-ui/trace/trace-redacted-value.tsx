@@ -27,5 +27,9 @@ export function TraceRedactedValue<T>({ value, render, className }: TraceRedacte
     return <>{render(value.value)}</>
   }
 
-  return <RedactedValue state={{ redacted: true, reason: value.reason }} className={className} />
+  return (
+    <RedactedValue state={{ redacted: true, reason: value.reason }} className={className}>
+      {null}
+    </RedactedValue>
+  )
 }
