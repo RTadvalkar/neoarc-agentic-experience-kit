@@ -25,6 +25,7 @@ export const executionLabTabs: readonly LabTab[] = [
   { target: "activity", label: "Activity" },
   { target: "trace", label: "Trace" },
   { target: "provenance", label: "Provenance" },
+  { target: "mission", label: "Mission" },
 ]
 
 export interface LabTabBarProps {

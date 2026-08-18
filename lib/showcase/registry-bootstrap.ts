@@ -14,10 +14,13 @@ import { createRendererRegistry, type RendererRegistry } from "../../src/neoarc-
 import { createSurfaceRegistry, type SurfaceRegistry } from "../../src/neoarc-agentic-projection/surface-registry"
 import type { AgenticViewNode } from "../../src/neoarc-agentic-projection/types"
 import type { ConversationUIEventPayload } from "../../src/neoarc-agentic-contracts/conversation-ui-events"
+import type { RuntimeUIEventPayload } from "../../src/neoarc-agentic-contracts/runtime-ui-events"
 import type { AgenticUIEvent } from "../../src/neoarc-agentic-contracts/ui-events"
 import { GenericFallbackRenderer, type GenericFallbackRendererProps } from "../../components/showcase/execution-lab/generic-fallback-renderer"
 import { ConversationNodeRenderer } from "../../components/showcase/execution-lab/conversation-node-renderer"
+import { RuntimeNodeRenderer } from "../../components/showcase/execution-lab/runtime-node-renderer"
 import { conversationNodeDefinitions } from "../../src/neoarc-agentic-projection/conversation-node-definitions"
+import { runtimeNodeDefinitions } from "../../src/neoarc-agentic-projection/runtime-node-definitions"
 
 export type NodeRenderer = ComponentType<{
   readonly node: AgenticViewNode
@@ -25,6 +28,8 @@ export type NodeRenderer = ComponentType<{
   readonly selected?: boolean
   /** Forwards semantic UI events (citation.open, toolActivity.toggle, ...) emitted by a rendered conversation node. Ignored by renderers that have none to emit. */
   readonly onEmitConversationEvent?: (event: AgenticUIEvent<ConversationUIEventPayload>) => void
+  /** Forwards semantic UI events (run.cancel.request, run.retry.request, ...) emitted by a rendered runtime node. Ignored by renderers that have none to emit. */
+  readonly onEmitRuntimeEvent?: (event: AgenticUIEvent<RuntimeUIEventPayload>) => void
 }>
 
 export const executionLabRendererRegistry: RendererRegistry<NodeRenderer> = createRendererRegistry<NodeRenderer>()
@@ -45,6 +50,13 @@ for (const definition of conversationNodeDefinitions) {
 // final node to one of these two kinds. Register both explicitly.
 executionLabRendererRegistry.register("conversation", "conversation.user-message", ConversationNodeRenderer as NodeRenderer)
 executionLabRendererRegistry.register("conversation", "conversation.agent-message", ConversationNodeRenderer as NodeRenderer)
+
+// Slice 4 — register every built-in `mission.*` node kind the same way:
+// iterate `runtimeNodeDefinitions` (the single source of truth) rather than
+// hardcoding "mission.mission" / "mission.run" / "mission.task" here.
+for (const definition of runtimeNodeDefinitions) {
+  executionLabRendererRegistry.register(definition.target, definition.kind, RuntimeNodeRenderer as NodeRenderer)
+}
 
 export interface WorkspaceActionExtension {
   readonly id: string

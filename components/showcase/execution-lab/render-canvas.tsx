@@ -23,10 +23,12 @@
 import { useMemo } from "react"
 import type { AgenticEventEnvelope } from "../../../src/neoarc-agentic-contracts/events"
 import type { ConversationUIEventPayload } from "../../../src/neoarc-agentic-contracts/conversation-ui-events"
+import type { RuntimeUIEventPayload } from "../../../src/neoarc-agentic-contracts/runtime-ui-events"
 import { createUIEvent, type AgenticUIEvent } from "../../../src/neoarc-agentic-contracts/ui-events"
 import type { AgenticViewNode, AgenticViewTarget } from "../../../src/neoarc-agentic-projection/types"
 import { applyEvents, createProjectionStore, selectNodes } from "../../../src/neoarc-agentic-projection/projection-store"
 import { conversationNodeDefinitions } from "../../../src/neoarc-agentic-projection/conversation-node-definitions"
+import { runtimeNodeDefinitions } from "../../../src/neoarc-agentic-projection/runtime-node-definitions"
 import { EmptyState } from "../../../src/neoarc-agentic-ui/foundation/empty-state"
 import { projectFoundationEvent } from "../../../lib/showcase/generic-projector"
 import type { AnyExecutionLabScenario } from "../../../lib/showcase/all-scenarios"
@@ -55,11 +57,16 @@ export function RenderCanvas({
     if (scenario.family === "foundation") {
       return (visibleEvents as readonly AgenticEventEnvelope[]).map((event) => projectFoundationEvent(event, target))
     }
-    const store = applyEvents(createProjectionStore(), visibleEvents as readonly AgenticEventEnvelope[], conversationNodeDefinitions)
+    const definitions = scenario.family === "runtime" ? runtimeNodeDefinitions : conversationNodeDefinitions
+    const store = applyEvents(createProjectionStore(), visibleEvents as readonly AgenticEventEnvelope[], definitions)
     return selectNodes(store).filter((node) => node.target === target)
   }, [scenario, visibleEvents, target])
 
   function handleConversationEvent(event: AgenticUIEvent<ConversationUIEventPayload>) {
+    onEmitUIEvent(event)
+  }
+
+  function handleRuntimeEvent(event: AgenticUIEvent<RuntimeUIEventPayload>) {
     onEmitUIEvent(event)
   }
 
@@ -87,6 +94,7 @@ export function RenderCanvas({
               node={node}
               selected={node.key === selectedNodeKey}
               onEmitConversationEvent={handleConversationEvent}
+              onEmitRuntimeEvent={handleRuntimeEvent}
               onSelect={(selected) => {
                 onSelectNode(selected)
                 onEmitUIEvent(

@@ -62,6 +62,17 @@ import { ProposalStatusBadge } from "../../../../src/neoarc-agentic-ui/human-int
 import { ProposalStatusTimeline } from "../../../../src/neoarc-agentic-ui/human-interaction/proposal-status-timeline"
 import { DecisionHistory } from "../../../../src/neoarc-agentic-ui/human-interaction/decision-history"
 import { PendingHumanInteractionSummary } from "../../../../src/neoarc-agentic-ui/human-interaction/pending-human-interaction-summary"
+import { MissionHeader } from "../../../../src/neoarc-agentic-ui/runtime/mission-header"
+import { RunStatusBadge } from "../../../../src/neoarc-agentic-ui/runtime/run-status-badge"
+import { RunStatusPanel } from "../../../../src/neoarc-agentic-ui/runtime/run-status-panel"
+import { RunActions } from "../../../../src/neoarc-agentic-ui/runtime/run-actions"
+import { WaitingForHumanBanner } from "../../../../src/neoarc-agentic-ui/runtime/waiting-for-human-banner"
+import { RunErrorPanel } from "../../../../src/neoarc-agentic-ui/runtime/run-error-panel"
+import { RunOutputs } from "../../../../src/neoarc-agentic-ui/runtime/run-outputs"
+import { AgentTaskRow } from "../../../../src/neoarc-agentic-ui/runtime/agent-task-row"
+import { AgentTaskInspector } from "../../../../src/neoarc-agentic-ui/runtime/agent-task-inspector"
+import { WorkflowRunTree } from "../../../../src/neoarc-agentic-ui/runtime/workflow-run-tree"
+import { ExecutionTimeline } from "../../../../src/neoarc-agentic-ui/runtime/execution-timeline"
 import {
   galleryActionAvailabilities,
   galleryAgent,
@@ -113,6 +124,25 @@ import {
   galleryStaleProposal,
   galleryUnavailablePermission,
 } from "../../../../lib/showcase/human-interaction-gallery-fixtures"
+import {
+  galleryExecutionSteps,
+  galleryMission,
+  galleryPendingInteraction,
+  galleryRunCancelRequested,
+  galleryRunCompleted,
+  galleryRunError,
+  galleryRunFailedNotRetryable,
+  galleryRunFailedRetryable,
+  galleryRunOutputs,
+  galleryRunPaused,
+  galleryRunRunning,
+  galleryRunStatuses,
+  galleryTaskCompleted,
+  galleryTaskFailed,
+  galleryTaskRunning,
+  galleryWorkflowGroups,
+  galleryWorkflowTasks,
+} from "../../../../lib/showcase/runtime-gallery-fixtures"
 import { GalleryEntry, GalleryVariantRow } from "./gallery-entry"
 
 export interface ComponentGalleryProps {
@@ -122,6 +152,7 @@ export interface ComponentGalleryProps {
 export function ComponentGallery({ onEmitUIEvent }: ComponentGalleryProps) {
   const [activeEntityId, setActiveEntityId] = useState(gallerySectionContext.id)
   const [permissionDialogOpen, setPermissionDialogOpen] = useState(false)
+  const [selectedGalleryTaskId, setSelectedGalleryTaskId] = useState(galleryTaskRunning.taskId)
 
   return (
     <div className="flex flex-col gap-8 pb-4" aria-label="Foundation component gallery">
@@ -895,6 +926,160 @@ export function ComponentGallery({ onEmitUIEvent }: ComponentGalleryProps) {
             {galleryPendingInteractions.map((interaction) => (
               <PendingHumanInteractionSummary key={interaction.id} interaction={interaction} />
             ))}
+          </div>
+        </GalleryVariantRow>
+      </GalleryEntry>
+
+      <GalleryEntry
+        id="mission-header"
+        name="MissionHeader"
+        description="Identifies the mission a run belongs to — title, supplied risk level, creation time, and the current run's label."
+        inputModel="mission: MissionSummary, run?: RunSummary"
+      >
+        <GalleryVariantRow label="With current run">
+          <div className="w-full max-w-xl">
+            <MissionHeader mission={galleryMission} run={galleryRunRunning} />
+          </div>
+        </GalleryVariantRow>
+      </GalleryEntry>
+
+      <GalleryEntry
+        id="run-status-badge"
+        name="RunStatusBadge"
+        description="Richer, run-specific status vocabulary — a sibling of RuntimeStatusBadge, never a replacement for it."
+        inputModel="status: RunStatus"
+      >
+        <GalleryVariantRow label="All states">
+          {galleryRunStatuses.map((status) => (
+            <RunStatusBadge key={status} status={status} />
+          ))}
+        </GalleryVariantRow>
+      </GalleryEntry>
+
+      <GalleryEntry
+        id="run-status-panel-actions"
+        name="RunStatusPanel / RunActions"
+        description="RunStatusPanel is the compact 'how is this run doing' summary; RunActions renders only the lifecycle controls valid for the run's current status (never both cancel and resume at once)."
+        inputModel="RunStatusPanel: run: RunSummary  |  RunActions: run: RunSummary, pendingAction?, onEmitCancel?, onEmitRetry?, onEmitResume?"
+      >
+        <GalleryVariantRow label="Running (cancellable)">
+          <div className="flex w-full max-w-md flex-col gap-2">
+            <RunStatusPanel run={galleryRunRunning} />
+            <RunActions run={galleryRunRunning} onEmitCancel={onEmitUIEvent} onEmitRetry={onEmitUIEvent} onEmitResume={onEmitUIEvent} />
+          </div>
+        </GalleryVariantRow>
+        <GalleryVariantRow label="Cancellation requested (in flight)">
+          <div className="flex w-full max-w-md flex-col gap-2">
+            <RunStatusPanel run={galleryRunCancelRequested} />
+            <RunActions run={galleryRunCancelRequested} onEmitCancel={onEmitUIEvent} />
+          </div>
+        </GalleryVariantRow>
+        <GalleryVariantRow label="Paused (resumable)">
+          <div className="flex w-full max-w-md flex-col gap-2">
+            <RunStatusPanel run={galleryRunPaused} />
+            <RunActions run={galleryRunPaused} onEmitResume={onEmitUIEvent} />
+          </div>
+        </GalleryVariantRow>
+        <GalleryVariantRow label="Failed, retryable">
+          <div className="flex w-full max-w-md flex-col gap-2">
+            <RunStatusPanel run={galleryRunFailedRetryable} />
+            <RunActions run={galleryRunFailedRetryable} onEmitRetry={onEmitUIEvent} />
+          </div>
+        </GalleryVariantRow>
+        <GalleryVariantRow label="Failed, not retryable (reason shown, no button)">
+          <div className="flex w-full max-w-md flex-col gap-2">
+            <RunStatusPanel run={galleryRunFailedNotRetryable} />
+            <RunActions run={galleryRunFailedNotRetryable} />
+          </div>
+        </GalleryVariantRow>
+        <GalleryVariantRow label="Completed (no actions render)">
+          <div className="w-full max-w-md">
+            <RunStatusPanel run={galleryRunCompleted} />
+          </div>
+        </GalleryVariantRow>
+      </GalleryEntry>
+
+      <GalleryEntry
+        id="run-detail-panels"
+        name="WaitingForHumanBanner / RunErrorPanel / RunOutputs"
+        description="Terminal/blocking run detail: WaitingForHumanBanner reuses PendingInteraction, RunErrorPanel shows only a supplied RunError with a conditional retry, RunOutputs lists produced artifacts (or an explicit empty state)."
+        inputModel="WaitingForHumanBanner: reason, interaction, onEmitOpen?  |  RunErrorPanel: runId, error, onEmitRetry?  |  RunOutputs: outputs, onEmitOpen?"
+      >
+        <GalleryVariantRow label="Waiting for human (execution permission)">
+          <div className="w-full max-w-xl">
+            <WaitingForHumanBanner reason="execution-permission" interaction={galleryPendingInteraction} onEmitOpen={onEmitUIEvent} />
+          </div>
+        </GalleryVariantRow>
+        <GalleryVariantRow label="Retryable error">
+          <div className="w-full max-w-xl">
+            <RunErrorPanel runId={galleryRunFailedRetryable.id} error={galleryRunError} onEmitRetry={onEmitUIEvent} />
+          </div>
+        </GalleryVariantRow>
+        <GalleryVariantRow label="Outputs (two artifacts) and empty state">
+          <div className="flex w-full max-w-xl flex-col gap-3">
+            <RunOutputs outputs={galleryRunOutputs} onEmitOpen={onEmitUIEvent} />
+            <RunOutputs outputs={[]} />
+          </div>
+        </GalleryVariantRow>
+      </GalleryEntry>
+
+      <GalleryEntry
+        id="agent-task-row-inspector"
+        name="AgentTaskRow / AgentTaskInspector"
+        description="AgentTaskRow is the compact, selectable row for one AgentTask; AgentTaskInspector is its detail view, listing every reference list as an explicit 'none supplied' when empty — never fabricated."
+        inputModel="AgentTaskRow: task: AgentTask, selected?, onSelect?  |  AgentTaskInspector: task: AgentTask | undefined"
+      >
+        <GalleryVariantRow label="Rows (running, completed, failed)">
+          <div className="flex w-full max-w-md flex-col gap-2">
+            {[galleryTaskRunning, galleryTaskCompleted, galleryTaskFailed].map((task) => (
+              <AgentTaskRow
+                key={task.taskId}
+                task={task}
+                selected={task.taskId === selectedGalleryTaskId}
+                onSelect={(selected) => setSelectedGalleryTaskId(selected.taskId)}
+                onEmitEvent={onEmitUIEvent}
+              />
+            ))}
+          </div>
+        </GalleryVariantRow>
+        <GalleryVariantRow label="Inspector for the selected row above">
+          <div className="w-full max-w-md">
+            <AgentTaskInspector task={[galleryTaskRunning, galleryTaskCompleted, galleryTaskFailed].find((t) => t.taskId === selectedGalleryTaskId)} />
+          </div>
+        </GalleryVariantRow>
+        <GalleryVariantRow label="No task selected">
+          <div className="w-full max-w-md">
+            <AgentTaskInspector task={undefined} />
+          </div>
+        </GalleryVariantRow>
+      </GalleryEntry>
+
+      <GalleryEntry
+        id="workflow-run-tree-execution-timeline"
+        name="WorkflowRunTree / ExecutionTimeline"
+        description="WorkflowRunTree is the structural, expandable phase/task hierarchy — a running/failed/waiting phase can never be collapsed away. ExecutionTimeline is the flat, chronological sibling view of the same kind of facts."
+        inputModel="WorkflowRunTree: groups: WorkflowGroup[], tasks: Map<id, AgentTask>  |  ExecutionTimeline: steps: ExecutionStep[]"
+      >
+        <GalleryVariantRow label="Workflow tree (a failed/running phase stays expanded)">
+          <div className="w-full max-w-md">
+            <WorkflowRunTree
+              groups={galleryWorkflowGroups}
+              tasks={galleryWorkflowTasks}
+              selectedTaskId={selectedGalleryTaskId}
+              onSelectTask={(task) => setSelectedGalleryTaskId(task.taskId)}
+              onEmitEvent={onEmitUIEvent}
+            />
+          </div>
+        </GalleryVariantRow>
+        <GalleryVariantRow label="Execution timeline (flat, chronological)">
+          <div className="w-full max-w-md">
+            <ExecutionTimeline steps={galleryExecutionSteps} />
+          </div>
+        </GalleryVariantRow>
+        <GalleryVariantRow label="Empty states">
+          <div className="flex w-full max-w-md flex-col gap-3">
+            <WorkflowRunTree groups={[]} tasks={new Map()} />
+            <ExecutionTimeline steps={[]} />
           </div>
         </GalleryVariantRow>
       </GalleryEntry>
