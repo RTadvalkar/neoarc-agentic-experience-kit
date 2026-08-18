@@ -26,7 +26,7 @@ boundary that produces these values.
 | `PermissionSet` | `{ [key: string]: boolean }` | Opaque flags from the product/backend. **Not security-authoritative.** |
 | `ActionAvailability` | `actionId, available, reason?, label?` | Whether a specific action can be taken right now, supplied — never inferred client-side. |
 | `ActionUnavailableReason` | `permission_denied \| not_supported \| requires_human_review \| runtime_unavailable \| UnavailableReason` | |
-| `RuntimeStatus` | `idle \| queued \| running \| waiting_for_human \| succeeded \| failed \| cancelled \| retrying` | Coarse-grained status reused by agents/runs/tasks in later slices. |
+| `RuntimeStatus` | `idle \| queued \| running \| waiting_for_human \| completed \| failed \| cancelled \| retrying` | Coarse-grained status reused by agents/runs/tasks in later slices. Vocabulary is aligned with normalized runtime events (`run.completed`, `task.completed`); Slice 4 may still introduce a richer `RunStatus`. |
 | `RiskLevel` | `none \| low \| medium \| high \| critical` | Supplied classification; the kit never computes risk. |
 | `TraceAccessLevel` | `USER \| OPERATOR \| DEVELOPER \| PLATFORM_ADMIN` | Mirrors `02B` visibility roles. UI-only; not authoritative. |
 | `RedactionState` | `redacted, reason?, note?` | Rendered by `RedactedValue` instead of showing/fabricating a value. |

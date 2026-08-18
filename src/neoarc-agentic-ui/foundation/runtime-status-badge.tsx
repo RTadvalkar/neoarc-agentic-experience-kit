@@ -21,7 +21,7 @@ const config: Record<
   queued: { label: "Queued", tone: "neutral", icon: Clock },
   running: { label: "Running", tone: "info", icon: RefreshCw },
   waiting_for_human: { label: "Waiting for human", tone: "warning", icon: UserRound },
-  succeeded: { label: "Succeeded", tone: "success", icon: Check },
+  completed: { label: "Completed", tone: "success", icon: Check },
   failed: { label: "Failed", tone: "danger", icon: X },
   cancelled: { label: "Cancelled", tone: "neutral", icon: Ban },
   retrying: { label: "Retrying", tone: "warning", icon: TriangleAlert },

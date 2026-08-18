@@ -92,13 +92,21 @@ export interface ActionAvailability {
   readonly label?: string
 }
 
-/** Coarse-grained runtime status used across agents, runs, and tasks. */
+/**
+ * Coarse-grained runtime status used across agents, runs, and tasks.
+ *
+ * Vocabulary is aligned with the normalized runtime event model (e.g.
+ * `run.completed`, `task.completed`) so this shared contract does not drift
+ * from the events later slices emit. Later slices may introduce a richer
+ * `RunStatus` vocabulary for run-specific detail; this stays the coarse,
+ * shared status every family (agents, runs, tasks) can render generically.
+ */
 export type RuntimeStatus =
   | "idle"
   | "queued"
   | "running"
   | "waiting_for_human"
-  | "succeeded"
+  | "completed"
   | "failed"
   | "cancelled"
   | "retrying"

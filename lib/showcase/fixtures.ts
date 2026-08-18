@@ -130,7 +130,7 @@ export const executionLabScenarios: readonly ExecutionLabScenario[] = [
     id: "runtime-lifecycle",
     label: "Runtime lifecycle",
     description:
-      "A run moves queued -> running -> succeeded. Demonstrates RuntimeStatus, the shared status vocabulary later slices reuse for agents, runs, and tasks.",
+      "A run moves queued -> running -> completed. Demonstrates RuntimeStatus, the shared status vocabulary later slices reuse for agents, runs, and tasks.",
     agent: researchAgent,
     context: projectContext,
     events: [
@@ -156,7 +156,7 @@ export const executionLabScenarios: readonly ExecutionLabScenario[] = [
         occurredAt: "2026-08-18T09:05:41.000Z",
         sequence: 3,
         correlation: { executionTraceId: "trace-002", runId: "run-002" },
-        payload: { status: "succeeded", label: "Citation check complete" },
+        payload: { status: "completed", label: "Citation check complete" },
       }),
     ],
   },

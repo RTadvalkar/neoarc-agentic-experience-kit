@@ -11,10 +11,11 @@
  * string with an accessible note rather than throwing or fabricating a
  * date).
  *
- * Note: "relative" is computed at render time against `now` (defaults to
- * `Date.now()`), so server- and client-rendered relative labels may differ
- * by a few seconds. Pass an explicit `now` in tests/fixtures/replay contexts
- * for determinism.
+ * Note: "relative" is computed against `now` (defaults to the time the
+ * component instance first mounted, captured once via a lazy `useState`
+ * initializer to keep the render body pure — it does not keep ticking).
+ * Pass an explicit `now` in tests/fixtures/replay contexts for determinism,
+ * or in any live view that should advance over time.
  */
 
 import * as React from "react"
@@ -45,6 +46,13 @@ function formatRelative(value: number, now: number): string {
 }
 
 export function Timestamp({ value, variant = "absolute", now, className }: TimestampProps) {
+  // `Date.now()` is impure, so it must not be called directly in the render
+  // body (calling it on every render can produce inconsistent output across
+  // React's double-render checks). Reading it once via a lazy `useState`
+  // initializer confines the impurity to a single, well-defined call site.
+  const [mountedAt] = React.useState(() => Date.now())
+  const effectiveNow = now ?? mountedAt
+
   const parsed = new Date(value)
   const isValid = !Number.isNaN(parsed.getTime())
 
@@ -63,7 +71,7 @@ export function Timestamp({ value, variant = "absolute", now, className }: Times
   }).format(parsed)
 
   const displayLabel =
-    variant === "relative" ? formatRelative(parsed.getTime(), now ?? Date.now()) : absoluteLabel
+    variant === "relative" ? formatRelative(parsed.getTime(), effectiveNow) : absoluteLabel
 
   return (
     <time

@@ -80,8 +80,10 @@ slices reuse across agents, runs, and tasks.
 
 **Input model:** `status: RuntimeStatus`.
 
-**States:** idle/queued/running/waiting_for_human/succeeded/failed/
-cancelled/retrying.
+**States:** idle/queued/running/waiting_for_human/completed/failed/
+cancelled/retrying. Vocabulary is aligned with normalized runtime events
+(`run.completed`, `task.completed`); a richer `RunStatus` may still be
+introduced in Slice 4.
 
 **Semantic events:** none.
 
@@ -143,12 +145,17 @@ this component).
 ## EntitySwitcher
 
 **Purpose:** Fully controlled listbox for switching which `ContextRef`
-entity is active.
+entity is active. Built on `@base-ui/react`'s `Select` parts rather than a
+hand-rolled disclosure, so opening/focus, keyboard navigation, selection,
+Escape/close, focus restoration, and ARIA semantics are provided by the
+primitive rather than reimplemented — see `docs/ACCESSIBILITY.md`.
 
 **Input model:** `entities: ContextRef[]`, `activeId: OpaqueId`,
-`onSelect(id)`, optional `label`.
+`onSelect(id)`, optional `label`. Open/close state is managed internally by
+`Select.Root`; the product adapter still only ever controls `activeId`.
 
-**States:** closed/open, entity list rendering, active-entity check mark.
+**States:** closed/open, entity list rendering, active-entity check mark,
+keyboard-highlighted item.
 
 **Semantic events:** none in Slice 1. `onSelect` is a plain callback; a
 future slice may add an `AgenticUIEventHandler`-shaped variant if a product
