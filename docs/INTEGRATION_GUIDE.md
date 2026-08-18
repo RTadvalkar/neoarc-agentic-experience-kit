@@ -1,4 +1,4 @@
-# Integration Guide (Slice 1 — Foundation)
+# Integration Guide (Slice 1 — Foundation, Slice 2 — Conversation & Replay)
 
 This document is for a **product** integrating the NeoArc Agentic
 Experience Kit — not for the kit's own internals. It defines who is
@@ -39,10 +39,15 @@ backend/runtime event → product event adapter → AgenticEventEnvelope
 2. **Product event adapter** — your code, mapping the raw event onto an
    `AgenticEventEnvelope<TPayload>` (`src/neoarc-agentic-contracts/events.ts`).
    You decide `durability` and which `EventCorrelation` ids apply.
-3. **Optional projector** — an `AgenticNodeDefinition` (yours or the kit's,
-   from Slice 2 onward) turning the envelope into an `AgenticViewNode`. Slice
-   1 ships the seam and one worked example
-   (`lib/showcase/generic-projector.ts`) for illustration.
+3. **Optional projector** — an `AgenticNodeDefinition` (yours, or a
+   kit-provided one) turning the envelope into an `AgenticViewNode`. Slice 1
+   ships the seam and one illustrative worked example
+   (`lib/showcase/generic-projector.ts`). Slice 2 adds the kit's first real
+   kit-provided definitions — `conversationNodeDefinitions`
+   (`src/neoarc-agentic-projection/conversation-node-definitions.ts`) — nine
+   definitions covering all ten conversation item kinds, ready to use
+   as-is against `conversation.*` events without a product writing any
+   projector code at all.
 4. **Renderer Registry** — resolves `(target, kind)` to a React component.
 5. **Controlled component** — renders the node's `data`.
 
@@ -81,3 +86,34 @@ through `executionLabRendererRegistry`
 `FoundationSummaryCard` or the `GenericAgenticNodeFallback`. This is
 showcase-only wiring — see `docs/implementation/MASTER_IMPLEMENTATION_PLAN.md`
 for why fixtures never live inside `src/`.
+
+## Slice 2 worked example — both integration modes, side by side
+
+The Execution Lab's Scenario Replay mode demonstrates Path B end-to-end
+using real kit-provided projection, not a showcase stand-in:
+`lib/showcase/conversation-fixtures.ts` builds `AgenticEventEnvelope`s
+standing in for "the backend" for eight scenarios (empty, ordinary
+exchange, streaming assistant, tool running/completed, clarification
+pending/resolved, retry, handoff, async work); `useEventReplay`
+(`components/showcase/execution-lab/use-event-replay.ts`) drives how many
+of those events are "visible" via Play/Pause/Step/Reset; `RenderCanvas`
+(`components/showcase/execution-lab/render-canvas.tsx`) folds the visible
+events through `applyEvents` using the kit's own
+`conversationNodeDefinitions`
+(`src/neoarc-agentic-projection/conversation-node-definitions.ts` — no
+showcase-only projector involved here, unlike Slice 1's foundation
+example) and resolves each resulting node through
+`executionLabRendererRegistry`
+(`lib/showcase/registry-bootstrap.ts`, registered once per built-in kind by
+iterating `conversationNodeDefinitions`) to `ConversationNodeRenderer`
+(`components/showcase/execution-lab/conversation-node-renderer.tsx`), which
+unwraps `node.data` and renders it with the exact same `AgentConversation`
+family components a Path A consumer would use directly.
+
+The Component Gallery mode demonstrates Path A instead: it composes
+`AgentConversation` and its siblings directly from hand-built
+`ConversationThread`/`ConversationTimelineItem` fixture values
+(`lib/showcase/conversation-gallery-fixtures.ts`), with no event stream,
+projector, or renderer registry involved at all — proving the "usable
+without `neoarc-agentic-projection`" invariant is not just a design claim
+but the literal code path exercised by half the Lab's own UI.

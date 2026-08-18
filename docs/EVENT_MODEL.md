@@ -1,4 +1,4 @@
-# Event Model (Slice 1 — Foundation)
+# Event Model (Slice 1 — Foundation, Slice 2 — Conversation & Replay)
 
 Two distinct event contracts exist in the kit. They are never merged, and
 neither is derived from the other's shape.
@@ -49,6 +49,21 @@ Rules:
   event to "the latest unfinished item" — see `docs/02A §Replayability` and
   `PROJECTION_MODEL.md`.
 
+### Slice 2: the conversation `payload` category
+
+`src/neoarc-agentic-contracts/conversation-events.ts` defines the first
+concrete, typed `payload` union: fifteen `conversation.*` event types
+(`message.created/delta/completed`, `activity.updated`,
+`tool.started/updated/completed`, `clarification.requested/resolved`,
+`handoff.requested/completed`, `artifact.produced`, `notice.posted`,
+`error.recorded`, `retry.scheduled`) — the exact set
+`src/neoarc-agentic-projection/conversation-node-definitions.ts` knows how
+to project. This is the pattern later slices follow for their own event
+categories: a typed payload union narrowed by `event.type`, never a change
+to the envelope shape itself. `lib/showcase/conversation-fixtures.ts` builds
+real `AgenticEventEnvelope<ConversationEventPayload>` values from this union
+for every Execution Lab conversation scenario.
+
 ## 2. `AgenticUIEvent` — semantic UI events (outbound)
 
 Defined in `src/neoarc-agentic-contracts/ui-events.ts`. Emitted by
@@ -79,10 +94,27 @@ Rules:
   rather than constructing the object literal by hand, to keep emission
   consistent.
 - Slice 1 does not define concrete `AgenticUIEventType` string constants;
-  those are introduced alongside the components that emit them, starting in
-  Slice 2. The Execution Lab currently only emits `"inspector.node.select"`
-  from the render canvas, logged for inspection — see `RENDER_CANVAS` in
-  `components/showcase/execution-lab/render-canvas.tsx`.
+  those are introduced alongside the components that emit them. The
+  Execution Lab's own `"inspector.node.select"`, emitted from the render
+  canvas (`components/showcase/execution-lab/render-canvas.tsx`), is the
+  Slice 1 example. Slice 2 adds the first product-facing set, defined in
+  `src/neoarc-agentic-contracts/conversation-ui-events.ts`: `"citation.open"`,
+  `"artifact.open"`, `"attachment.open"`, `"handoff.open"`,
+  `"toolActivity.toggle"`, `"clarification.submit"`,
+  `"conversation.message.send"`, `"conversation.stop.request"`,
+  `"conversation.retry.request"`. The Execution Lab wires
+  `ConversationNodeRenderer`'s `onEmitConversationEvent` into the same live
+  event log, so `"citation.open"`, `"artifact.open"`, `"attachment.open"`,
+  `"handoff.open"`, `"toolActivity.toggle"`, and `"clarification.submit"`
+  are all directly reachable by interacting with rendered scenario nodes.
+  `"conversation.message.send"` (`AgentComposer`) and
+  `"conversation.stop.request"`/`"conversation.retry.request"`
+  (`ResponseActions`, reachable only from a `running`/`failed` message) are
+  not currently demoed in the Lab — no fixture scenario reaches a `failed`
+  message status, and `AgentComposer` is not composed into the Lab, since
+  replay is passive playback rather than live composition. Both remain
+  fully implemented, typed, and covered by the component catalog; a future
+  slice or a product integration can compose them directly.
 
 ## Why two contracts, not one
 
