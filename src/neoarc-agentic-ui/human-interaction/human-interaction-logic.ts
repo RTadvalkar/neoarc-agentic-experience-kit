@@ -12,12 +12,15 @@
  *    caller has actually wired `onRequestOverride` — an override button
  *    that opens no dialog would be worse than not rendering one at all.
  *
- * 2. `resolveExecutionPermissionCardMode` — the same
- *    `ExecutionPermissionRequest.status`/`outcome` pair always maps to
- *    exactly one of four mutually exclusive render modes, and
- *    `unavailable` is never treated as a resolved success/failure outcome
- *    (see docs/02B_INSTRUCTION_UX_TRACEABILITY_AND_HUMAN_CONTROL.md §Two
- *    separate approval domains).
+ * 2. `resolveExecutionPermissionCardMode` — every `ExecutionPermissionRequest`
+ *    maps to exactly one of four mutually exclusive render modes (`pending`,
+ *    `submitted`, `resolved`, `blocked`), and `unavailable` is never treated
+ *    as a resolved success/failure outcome (see
+ *    docs/02B_INSTRUCTION_UX_TRACEABILITY_AND_HUMAN_CONTROL.md §Two separate
+ *    approval domains). The `ExecutionPermissionRequest` discriminated union
+ *    already makes "resolved without an outcome" unrepresentable at the
+ *    type level; this function only has to distinguish `unavailable` from
+ *    every other resolved outcome.
  *
  * No React, no JSX — importable from a plain `node --test` module.
  */
@@ -50,20 +53,32 @@ export function resolveAvailableDecisionActions(
     .map((permission) => permission.action)
 }
 
-export type ExecutionPermissionCardMode = "blocked" | "resolved" | "pending"
+export type ExecutionPermissionCardMode = "pending" | "submitted" | "resolved" | "blocked"
 
 /**
- * Maps one `ExecutionPermissionRequest` to exactly one render mode:
+ * Maps one `ExecutionPermissionRequest` to exactly one of four mutually
+ * exclusive render modes:
+ * - `"pending"` — `status === "pending"`. Action buttons render, enabled.
+ * - `"submitted"` — `status === "submitted"`. Action buttons render,
+ *   disabled, with an explicit "awaiting confirmation" indicator.
+ * - `"resolved"` — `status === "resolved"` with any outcome other than
+ *   `unavailable`. Rendered via `PermissionOutcomeBadge`; no action buttons.
  * - `"blocked"` — `status === "resolved"` and `outcome === "unavailable"`.
  *   Rendered via `PermissionBlockedState`, never `PermissionOutcomeBadge`.
- * - `"resolved"` — `status === "resolved"` with any other outcome.
- *   Rendered via `PermissionOutcomeBadge`; action buttons never appear.
- * - `"pending"` — anything else (`pending` or `submitted`). Action
- *   buttons render, disabled while `status === "submitted"`.
+ *
+ * The switch is exhaustive over `ExecutionPermissionRequest["status"]`, so
+ * a future status value added to the union will fail to compile here
+ * rather than silently falling through to the wrong mode.
  */
 export function resolveExecutionPermissionCardMode(
-  request: Pick<ExecutionPermissionRequest, "status" | "outcome">,
+  request: ExecutionPermissionRequest,
 ): ExecutionPermissionCardMode {
-  if (request.status !== "resolved") return "pending"
-  return request.outcome === "unavailable" ? "blocked" : "resolved"
+  switch (request.status) {
+    case "pending":
+      return "pending"
+    case "submitted":
+      return "submitted"
+    case "resolved":
+      return request.outcome === "unavailable" ? "blocked" : "resolved"
+  }
 }
