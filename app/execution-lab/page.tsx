@@ -10,7 +10,7 @@
  * projection seam over showcase-only fixtures — see lib/showcase/.
  */
 
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import type { AgenticUIEvent } from "../../src/neoarc-agentic-contracts/ui-events"
@@ -33,6 +33,7 @@ import { ReplayControls } from "../../components/showcase/execution-lab/replay-c
 import { ThemeToggle } from "../../components/showcase/execution-lab/theme-toggle"
 import { ComponentGallery } from "../../components/showcase/execution-lab/component-gallery/component-gallery"
 import { useEventReplay } from "../../components/showcase/execution-lab/use-event-replay"
+import { findSourceEventForNode } from "../../components/showcase/execution-lab/find-source-event"
 
 export default function ExecutionLabPage() {
   const [activeMode, setActiveMode] = useState<LabMode>("scenario")
@@ -48,27 +49,29 @@ export default function ExecutionLabPage() {
 
   const replay = useEventReplay(scenario.events.length)
 
-  // A newly selected scenario always starts its replay from index 0 and
-  // clears the inspector selection — see docs/04 §8 "Reset" semantics.
-  useEffect(() => {
-    setSelectedNode(undefined)
-  }, [activeScenarioId])
-
   const currentEvent = useMemo(
     () => (replay.currentIndex > 0 ? scenario.events[replay.currentIndex - 1] : undefined),
     [scenario, replay.currentIndex],
   )
 
+  // `selectedNode.key` is a stable business id, never an event id (see
+  // conversation-node-definitions.ts), so recovering "that node's own
+  // source envelope" requires matching on the business id it carries —
+  // see find-source-event.ts.
   const selectedEvent = useMemo(() => {
     if (!selectedNode) return undefined
-    return scenario.events.find((event) => event.id === selectedNode.key)
-  }, [scenario, selectedNode])
+    return findSourceEventForNode(scenario.events.slice(0, replay.currentIndex), selectedNode)
+  }, [scenario, selectedNode, replay.currentIndex])
 
   const workspaceActions = executionLabSurfaceRegistry.list("workspace.actions")
 
   function handleScenarioSelect(id: string) {
     setActiveScenarioId(id)
     setSelectedNode(undefined)
+    // `useEventReplay` only auto-resets when `totalEvents` itself changes;
+    // two scenarios can coincidentally have the same event count, so reset
+    // explicitly here to guarantee every scenario switch starts at index 0.
+    replay.reset()
   }
 
   function handleEmitUIEvent(event: AgenticUIEvent) {
@@ -152,7 +155,7 @@ export default function ExecutionLabPage() {
               <Surface className="flex min-h-0 flex-1 flex-col gap-4 p-4">
                 <SectionHeader
                   title="Inspectors"
-                  description="\u201cCurrent event\u201d always tracks the replay position. Selecting a rendered node instead fills the input/projected-node pair with that node's own source envelope."
+                  description={'"Current event" always tracks the replay position. Selecting a rendered node instead fills the input/projected-node pair with that node\'s own source envelope.'}
                 />
                 <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
                   <JsonInspector
