@@ -45,7 +45,6 @@ import {
   galleryEntities,
   gallerySectionContext,
   galleryMetadataItems,
-  galleryProjectContext,
   galleryRedactionStates,
   galleryRiskLevels,
   galleryRuntimeStatuses,
@@ -64,7 +63,6 @@ export interface ComponentGalleryProps {
 
 export function ComponentGallery({ onEmitUIEvent }: ComponentGalleryProps) {
   const [activeEntityId, setActiveEntityId] = useState(gallerySectionContext.id)
-  const [avatarKind, setAvatarKind] = useState<"agent" | "human">("agent")
 
   return (
     <div className="flex flex-col gap-8 pb-4" aria-label="Foundation component gallery">
@@ -390,7 +388,6 @@ export function ComponentGallery({ onEmitUIEvent }: ComponentGalleryProps) {
         Toggle theme with the control in the header above to inspect light/dark behavior across every
         component in this gallery.
       </p>
-      {avatarKind === "agent" ? null : null}
     </div>
   )
 }
