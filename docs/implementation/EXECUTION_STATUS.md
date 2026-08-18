@@ -12,10 +12,10 @@ Gate 2   PASS
 Slice 3  COMPLETE
 Gate 3   PASS
 
-Slice 4  SLICE_4_VISUAL_CORE_READY_FOR_HUMAN_REVIEW
-Gate 4   NOT EVALUATED (deliberately — see Log; full gate close deferred to post-review)
+Slice 4  COMPLETE
+Gate 4   PASS
 
-Slice 5  BLOCKED BY GATE 4
+Slice 5  READY / NOT STARTED
 Gate 5   NOT EVALUATED
 
 Slice 6  BLOCKED BY GATE 5
@@ -71,3 +71,9 @@ Gate 8   NOT EVALUATED
   - Deliberately deferred out of this pass (explicit user direction, not an oversight): `STATE_MODEL.md`, `RUNTIME_MODEL.md`, `docs/wiring/runtime/*`, a full `COMPONENT_CATALOG.md` rewrite for the runtime family, the remaining ~6 of the original 12 planned scenarios (e.g. dedicated correlation/replay-focused cases beyond the six above), and formal Gate 4 prose against `11_V0_GATE_CHECKLIST.md`. No new automated tests were added for the wiring itself (composition-only; the underlying logic — `workflow-tree-logic.ts`, projection convergence — already has coverage); adding scenario-level Execution Lab tests is left for the deferred documentation/close-out pass.
   - Verified this pass: `npx tsc --noEmit` clean, `npx eslint . --max-warnings=0` clean, `npm test` 32/32 passing (unchanged suite, no regressions), `npx next build` clean production build. Browser-verified with `agent-browser` in both light and dark themes across all six Mission-tab scenarios: multi-phase running state, agent handoff, waiting-for-human banner with a working "Review" action, retryable failure with a working "Retry" action, cancel-requested pending state followed by the terminal cancelled state (no actions render), and completed state with rendered output artifacts. Confirmed each of the five semantic runtime UI events (`run.retry.request`, `run.cancel.request`, `run.resume.request`, `run.output.open`, `run.task.open`) appears correctly in the live event log when triggered from the Component Gallery's `RunErrorPanel`/`RunActions`/`RunOutputs`/`AgentTaskRow` demos, and that `run.humanAction.open` fires correctly from the Mission tab's `WaitingForHumanBanner`.
 - Slice 5 not started; blocked pending human review of this Slice 4 visual core pass.
+- **Gate 4 runtime-projection hardening (2026-08-18):** removed fabricated `RunSummary`/`AgentTask` fallbacks from `runtime-node-definitions.ts`. A later `run.*` without a prior `run.started` for that `runId`, or a later `task.progress`/`task.completed` without a prior `task.started` for that `taskId`, now throws `ProjectionInvariantError` (`projection-invariant.ts` + `requireExistingNode`) instead of inventing `Run <id>` labels, `Task <id>` titles, `running` status, cancellation state, or an empty workflow. Added `runtime-node-definitions.test.mts`: all six Slice 4 Execution Lab scenarios converge full-replay vs live-append; run identity is stable through cancel lifecycle; task identity is stable through progress/completion; out-of-order run/task updates fail explicitly; projected labels/titles match `*.started` payloads only. `AgenticNodeDefinition` / `projection-store.ts` unchanged. UX, Execution Lab scenarios, and component structure unchanged. Slice 5 not started.
+  - **Gate 4 evaluated against `11_V0_GATE_CHECKLIST.md`: PASS.** Missions/runs/tasks are distinct (`mission.mission` / `mission.run` / `mission.task` with `MissionHeader` / `RunStatusPanel` / `AgentTaskRow`); hierarchical workflow exists (`WorkflowRunTree` + `workflow-tree-logic.ts`; gallery-only on the Mission tab, as previously documented); active/error/cancelled branches stay force-expanded (`isForceExpandedStatus`); waiting-for-human is prominent (`WaitingForHumanBanner` + `runtime-waiting-for-human`); `AgentTask` carries supplied `inputRefs`/`knowledgeRefs`/`relationshipRefs`/`toolCallRefs`/`outputRefs` and the inspector renders missing lists as "None supplied"; the projector no longer invents runtime facts; retry/cancel/error states exist (`RunActions` / `RunErrorPanel` + failure/cancel scenarios); generic contracts stay `Run`/`Mission`/`Task`/`WorkflowGroup` with no Temporal/Cadence/Activity leak.
+  - Still deliberately deferred (not generated in this pass): `STATE_MODEL.md`, `RUNTIME_MODEL.md`, `docs/wiring/runtime/*`, a full `COMPONENT_CATALOG.md` rewrite for the runtime family, and the remaining ~6 of the original 12 Execution Lab scenarios.
+  - Verified this pass (pnpm): `pnpm exec tsc --noEmit` clean, `pnpm exec eslint . --max-warnings=0` clean, `pnpm test` 38/38 passing, `pnpm exec next build` clean production build (`/` and `/execution-lab` prerender as static content).
+- Slice 5 remains READY / NOT STARTED. Do not begin it until explicitly requested.
+
