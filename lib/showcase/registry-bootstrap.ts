@@ -19,8 +19,14 @@ import type { AgenticUIEvent } from "../../src/neoarc-agentic-contracts/ui-event
 import { GenericFallbackRenderer, type GenericFallbackRendererProps } from "../../components/showcase/execution-lab/generic-fallback-renderer"
 import { ConversationNodeRenderer } from "../../components/showcase/execution-lab/conversation-node-renderer"
 import { RuntimeNodeRenderer } from "../../components/showcase/execution-lab/runtime-node-renderer"
+import { TraceNodeRenderer } from "../../components/showcase/execution-lab/trace-node-renderer"
+import { ProvenanceNodeRenderer } from "../../components/showcase/execution-lab/provenance-node-renderer"
+import { ActivityNodeRenderer } from "../../components/showcase/execution-lab/activity-node-renderer"
 import { conversationNodeDefinitions } from "../../src/neoarc-agentic-projection/conversation-node-definitions"
 import { runtimeNodeDefinitions } from "../../src/neoarc-agentic-projection/runtime-node-definitions"
+import { traceNodeDefinitions } from "../../src/neoarc-agentic-projection/trace-node-definitions"
+import { provenanceNodeDefinitions } from "../../src/neoarc-agentic-projection/provenance-node-definitions"
+import { activityNodeDefinitions } from "../../src/neoarc-agentic-projection/activity-node-definitions"
 
 export type NodeRenderer = ComponentType<{
   readonly node: AgenticViewNode
@@ -56,6 +62,19 @@ executionLabRendererRegistry.register("conversation", "conversation.agent-messag
 // hardcoding "mission.mission" / "mission.run" / "mission.task" here.
 for (const definition of runtimeNodeDefinitions) {
   executionLabRendererRegistry.register(definition.target, definition.kind, RuntimeNodeRenderer as NodeRenderer)
+}
+
+// Slice 5 — register the Trace, Provenance, and Activity families the same
+// way: iterate each family's own node-definitions module rather than
+// hardcoding kind strings here.
+for (const definition of traceNodeDefinitions) {
+  executionLabRendererRegistry.register(definition.target, definition.kind, TraceNodeRenderer as NodeRenderer)
+}
+for (const definition of provenanceNodeDefinitions) {
+  executionLabRendererRegistry.register(definition.target, definition.kind, ProvenanceNodeRenderer as NodeRenderer)
+}
+for (const definition of activityNodeDefinitions) {
+  executionLabRendererRegistry.register(definition.target, definition.kind, ActivityNodeRenderer as NodeRenderer)
 }
 
 export interface WorkspaceActionExtension {

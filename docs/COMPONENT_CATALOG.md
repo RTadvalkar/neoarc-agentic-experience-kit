@@ -1,8 +1,10 @@
 # Component Catalog
 
-Status: Slice 1 (Foundation) + Slice 2 (Conversation & Replay). Updated by
-every later slice — see `docs/implementation/EXECUTION_STATUS.md` for what
-slice this repo is currently on.
+Status: Slice 1 (Foundation) + Slice 2 (Conversation & Replay) + Slice 5
+(Trace & Provenance). Updated by every later slice — see
+`docs/implementation/EXECUTION_STATUS.md` for what slice this repo is
+currently on. The Human Interaction and Runtime families (Slices 3–4) are
+not yet documented here — see `EXECUTION_STATUS.md`'s Slice 4 close note.
 
 This catalog documents every component in `src/neoarc-agentic-ui`. For each
 component: purpose, input model, supported states, semantic events (if any),
@@ -730,6 +732,605 @@ render an `AgenticViewNode`, so it imports that one type from the
 projection package. `neoarc-agentic-ui` remains usable without
 `neoarc-agentic-projection` for every other component; a consumer who never
 uses projection simply never imports this file.
+
+---
+
+## Trace family
+
+Execution provenance, not private reasoning: every component below in
+`src/neoarc-agentic-ui/trace/` renders only observable/supplied execution
+facts — there is no "reasoning" `TraceEventKind` and nothing here renders a
+model's hidden chain-of-thought. All are pure/controlled, operate directly
+on `TraceEvent`/`ExecutionTraceSummary` (`src/neoarc-agentic-contracts/trace.ts`)
+with no projection dependency — the same dual-use pattern as
+`ArtifactReferenceCard`: usable with a hand-built view model or via a
+projected `TraceEvent` node. See `docs/TRACE_MODEL.md` for the full contract
+catalog and `docs/TRACE_ACCESS_AND_REDACTION.md` for the access/redaction
+policy referenced below.
+
+---
+
+### TraceActor
+
+**Purpose:** a compact "who did this" line for the Trace view, composing
+`AgentAvatar` for the leaner `ActorSummary` shape (Trace events don't carry
+the richer `AgentSummary`).
+
+**Input model:** `actor: ActorSummary`.
+
+**States:** with/without `secondaryLabel`.
+
+**Semantic events:** none.
+
+**Trace visibility:** none — always renders whatever actor is supplied.
+
+**Example:** Component Gallery "TraceActor / TraceRedactedValue" entry.
+
+---
+
+### TraceRedactedValue
+
+**Purpose:** kind-aware wrapper adapting a Trace-specific `AvailableOr<T>`
+field (currently `ResolvedModelTrace`'s `TraceModelRoute`) into the existing
+`RedactedValue` primitive, rather than a second unavailable-reason
+treatment.
+
+**Input model:** `value: AvailableOr<T>`, `render: (value: T) => ReactNode`.
+
+**States:** available (renders `render(value)`); unavailable (renders
+`RedactedValue` with the supplied `UnavailableReason`).
+
+**Semantic events:** none.
+
+**Trace visibility:** this component *is* the redaction boundary — see
+`docs/TRACE_ACCESS_AND_REDACTION.md`.
+
+**Example:** Component Gallery "TraceActor / TraceRedactedValue" entry;
+composed by `ResolvedModelTrace`.
+
+---
+
+### KnowledgeUsageBadge / RelationshipUsageBadge
+
+**Purpose:** small labeled badges over `KnowledgeUsageCategory`
+(retrieved/selected/supplied/cited) and `RelationshipUsageCategory`
+(retrieval/context/evidence/impact) — closed switches that keep each
+category visually distinct rather than collapsing into one "used" label,
+per the knowledge/relationship usage criteria.
+
+**Input model:** `KnowledgeUsageBadge`: `category: KnowledgeUsageCategory`.
+`RelationshipUsageBadge`: `category: RelationshipUsageCategory`.
+
+**States:** one per category (closed union, no fallback).
+
+**Semantic events:** none.
+
+**Trace visibility:** none — the category itself must be supplied, never
+inferred from traversal depth or retrieval order.
+
+**Example:** Component Gallery "KnowledgeUsageBadge / RelationshipUsageBadge"
+entry; reused by `KnowledgeTrace`, `RelationshipTrace`, and
+`ProvenanceEvidenceEntry`.
+
+---
+
+### SystemInstructionTrace / RuntimeRecipeTrace / ModelPolicyTrace
+
+**Purpose:** render identity/version facts (never content) for the system
+instruction, semantic runtime recipe, and model policy in effect during a
+turn — three structurally identical detail bodies `TraceInspector`
+dispatches to.
+
+**Input model:** each takes `detail: SystemInstructionTraceDetail |
+RuntimeRecipeTraceDetail | ModelPolicyTraceDetail` (`instructionId`/
+`recipeId`/`policyId`, `version?`, `label?`).
+
+**States:** any subset of `id`/`version`/`label` supplied; falls back to a
+generic label when only an id is present.
+
+**Semantic events:** none.
+
+**Trace visibility:** none — identity facts are never permission-aware
+themselves (unlike the resolved model route).
+
+**Example:** Component Gallery "SystemInstructionTrace / UserInputTrace /
+ContextTrace" and "RuntimeRecipeTrace / ModelPolicyTrace / ResolvedModelTrace"
+entries.
+
+---
+
+### UserInputTrace
+
+**Purpose:** render the raw user input that started or continued a turn,
+verbatim — never summarized or paraphrased by the kit.
+
+**Input model:** `detail: UserInputTraceDetail` (`text: string`).
+
+**States:** any string, including long/multi-line input (`whitespace-pre-wrap`).
+
+**Semantic events:** none.
+
+**Trace visibility:** none.
+
+**Example:** Component Gallery "SystemInstructionTrace / UserInputTrace /
+ContextTrace" entry.
+
+---
+
+### ContextTrace
+
+**Purpose:** render one supplied piece of context (workspace/section/product
+context) fed into the run.
+
+**Input model:** `detail: ContextTraceDetail` (`label`, `value?`).
+
+**States:** with/without `value`.
+
+**Semantic events:** none.
+
+**Trace visibility:** none.
+
+**Example:** Component Gallery "SystemInstructionTrace / UserInputTrace /
+ContextTrace" entry.
+
+---
+
+### ResolvedModelTrace
+
+**Purpose:** render the model actually resolved/targeted for a turn.
+Deliberately `AvailableOr`-wrapped because whether this is shown at all is
+permission-aware — composes `TraceRedactedValue` rather than checking
+`.available` a second time inline.
+
+**Input model:** `resolvedModel: AvailableOr<TraceModelRoute>`.
+
+**States:** available (model id/provider/version); unavailable (redacted,
+with reason).
+
+**Semantic events:** none.
+
+**Trace visibility:** the primary access-controlled field in this family —
+see `docs/TRACE_ACCESS_AND_REDACTION.md`.
+
+**Example:** Component Gallery "RuntimeRecipeTrace / ModelPolicyTrace /
+ResolvedModelTrace" entry.
+
+---
+
+### KnowledgeTrace
+
+**Purpose:** render one supplied `KnowledgeUsage` fact, visually
+distinguishing retrieved/selected/supplied/cited — never collapsing every
+usage into a single "used" concept. `score` renders only when supplied.
+
+**Input model:** `usage: KnowledgeUsage`.
+
+**States:** each `usageCategory`; with/without `score`/`sourceType`/`title`.
+
+**Semantic events:** none.
+
+**Trace visibility:** none.
+
+**Example:** Component Gallery "KnowledgeTrace / RelationshipTrace" entry.
+
+---
+
+### RelationshipTrace
+
+**Purpose:** render one supplied relationship traversal: source →
+predicate → target, with the usage category as a badge and traversal depth
+shown only when supplied — never infers importance from depth alone.
+
+**Input model:** `detail: RelationshipUsage`.
+
+**States:** each `usageCategory`; with/without `traversalDepth`.
+
+**Semantic events:** none.
+
+**Trace visibility:** none.
+
+**Example:** Component Gallery "KnowledgeTrace / RelationshipTrace" entry.
+
+---
+
+### ToolTrace
+
+**Purpose:** a sanitized summary of one tool invocation for the forensic
+Trace view — deliberately never renders raw tool I/O, only the adapter's own
+sanitized `actionSummary`/`resultSummary` text.
+
+**Input model:** `detail: ToolTraceDetail` (`action: ToolActionIdentity`,
+`status: RuntimeStatus`, `resultSummary?`).
+
+**States:** every `RuntimeStatus`; with/without `resultSummary`/`targetLabel`.
+
+**Semantic events:** none.
+
+**Trace visibility:** never renders raw tool payloads, per the sanitized
+tool-summary requirement.
+
+**Example:** Component Gallery "ToolTrace / AgentActivityTrace" entry.
+
+---
+
+### AgentActivityTrace
+
+**Purpose:** a single terse, safe activity summary line, reusing the same
+vocabulary `ActivitySummary` (`conversation.ts`) uses elsewhere.
+
+**Input model:** `detail: AgentActivityTraceDetail` (`label`, `status?`).
+
+**States:** with/without `status`.
+
+**Semantic events:** none.
+
+**Trace visibility:** none.
+
+**Example:** Component Gallery "ToolTrace / AgentActivityTrace" entry.
+
+---
+
+### HumanInteractionTrace / ProposalTrace
+
+**Purpose:** the two approval domains stay visually distinct here.
+`HumanInteractionTrace` covers only `domain: "clarification" |
+"execution-permission"` facts — "may this proceed?" — while
+`ProposalTrace` covers business-decision (`proposal.review.*`) facts —
+"should this become authoritative?" They are never collapsed into one
+generic shape.
+
+**Input model:** `HumanInteractionTrace`: `detail: HumanInteractionTraceDetail`
+(`domain`, `interactionId`, `label`, `outcome?`). `ProposalTrace`:
+`detail: ProposalTraceDetail` (`proposalId`, `label`, `action?`).
+
+**States:** each `domain`; with/without `outcome`/`action`.
+
+**Semantic events:** none.
+
+**Trace visibility:** none.
+
+**Example:** Component Gallery "HumanInteractionTrace / ProposalTrace" entry.
+
+---
+
+### ArtifactTrace
+
+**Purpose:** render one artifact fact for the Trace view, reusing
+`ArtifactRef` (`conversation.ts`) as-is rather than re-declaring an
+artifact shape.
+
+**Input model:** `detail: ArtifactRef`.
+
+**States:** with/without `artifactType`/`version`/`status`.
+
+**Semantic events:** none.
+
+**Trace visibility:** none.
+
+**Example:** Component Gallery "ArtifactTrace / ErrorTrace / RetryTrace" entry.
+
+---
+
+### ErrorTrace
+
+**Purpose:** a read-only rendering of one `RunError` fact for the forensic
+log. Unlike `RunErrorPanel` (Mission tab), this never offers a retry action
+— Trace is a record of what happened, not a place to take action.
+
+**Input model:** `detail: RunError`.
+
+**States:** retryable (shows "Retryable"); not retryable (shows the
+supplied reason, if any).
+
+**Semantic events:** none — deliberately has no `onEmitRetry`.
+
+**Trace visibility:** none.
+
+**Example:** Component Gallery "ArtifactTrace / ErrorTrace / RetryTrace" entry.
+
+---
+
+### RetryTrace
+
+**Purpose:** render one retry-scheduling fact, kept distinct from
+`ErrorTrace` per the reserved `retry.scheduled` vocabulary entry — a retry
+is not itself an error.
+
+**Input model:** `detail: RetryTraceDetail` (`attempt`, `reason?`,
+`scheduledFor?`).
+
+**States:** with/without `reason`/`scheduledFor`.
+
+**Semantic events:** none.
+
+**Trace visibility:** none.
+
+**Example:** Component Gallery "ArtifactTrace / ErrorTrace / RetryTrace" entry.
+
+---
+
+### TraceEventRow / TraceInspector
+
+**Purpose:** `TraceEventRow` is one forensic row — kind badge, an honest
+one-line summary derived only from the event's own supplied fields (never
+fabricated), actor (if supplied), timestamp. `TraceInspector` is its detail
+panel, dispatching on `detail.kind` through a closed switch (same pattern
+as `AgentConversation`'s ten-case dispatch) to the per-kind components
+above, so an unhandled `TraceEventKind` is a compile error, never a silent
+fallback.
+
+**Input model:** `TraceEventRow`: `event: TraceEvent`, `selected?`,
+`onEmitSelect?`. `TraceInspector`: `event: TraceEvent | undefined`.
+
+**States:** every `TraceEventKind`; selected/unselected row; no event
+selected (inspector shows `EmptyState`).
+
+**Semantic events:** `TraceEventRow` emits `trace.event.select` on click.
+
+**Trace visibility:** `TraceInspector` renders "Actor not supplied" rather
+than omitting the actor slot silently when absent.
+
+**Example:** Component Gallery "TraceEventRow / TraceInspector" entry; Trace
+tab of the Execution Lab.
+
+---
+
+### TraceTimeline / TraceTurn / TraceStep
+
+**Purpose:** `TraceTimeline` is the flat chronological sibling of turn/step
+grouping — a plain renderer of whatever already-filtered `TraceEvent[]` list
+it's given. `TraceTurn` and `TraceStep` are collapsible disclosure headers
+wrapping whatever `TraceEventRow`/`TraceStep` children the caller supplies,
+never duplicating event content (they reference events by id via
+`eventIds`).
+
+**Input model:** `TraceTimeline`: `events: TraceEvent[]`, `selectedEventId?`,
+`onEmitSelect?`. `TraceTurn`: `turn: TraceTurn`, `eventCount`, `defaultOpen?`,
+`children`. `TraceStep`: `step: TraceStep`, `eventCount`, `defaultOpen?`,
+`children`.
+
+**States:** empty timeline (`EmptyState`); expanded/collapsed turn or step.
+
+**Semantic events:** `TraceTimeline` forwards `TraceEventRow`'s
+`trace.event.select`.
+
+**Trace visibility:** none.
+
+**Example:** Component Gallery "TraceTimeline / TraceTurn / TraceStep" entry;
+Trace tab when the active scenario supplies `turns`/`steps`.
+
+---
+
+### TraceExplorer
+
+**Purpose:** the root Trace surface — composes filter (`TraceEventKind`
+multi-select) + search controls, turn/step grouping (when supplied) or a
+flat `TraceTimeline`, and the `TraceInspector` detail panel for the
+selected event, all driven off the same flat `events` array. Turn/step
+grouping happens client-side by reading `correlation.turnId`/`stepId` —
+there is no second accumulating "trace node" kind in the projector.
+
+**Input model:** `events: TraceEvent[]`, `turns?`, `steps?`,
+`selectedEventId?`, `filterKinds?`, `searchQuery?`, `onEmitEvent?`.
+
+**States:** no events (`EmptyState`); with/without turn/step grouping;
+active filter/search narrowing the list to zero matches.
+
+**Semantic events:** `trace.event.select`, `trace.filter.change`,
+`trace.search.change`.
+
+**Trace visibility:** none — this is the Trace tab's composition root.
+
+**Example:** Component Gallery "TraceExplorer" entry; Trace tab of the
+Execution Lab.
+
+---
+
+### TraceUsageSummary / TraceTimingSummary
+
+**Purpose:** render supplied token/cost and latency facts. Every field is
+optional and omitted entirely — never shown as "0" or fabricated — when not
+supplied by the adapter.
+
+**Input model:** `TraceUsageSummary`: `usage: TraceUsage | undefined`.
+`TraceTimingSummary`: `timing: TraceTiming | undefined`.
+
+**States:** fully supplied; partially supplied; `undefined`/all-fields-absent
+(renders nothing).
+
+**Semantic events:** none.
+
+**Trace visibility:** none.
+
+**Example:** Component Gallery "TraceUsageSummary / TraceTimingSummary"
+entry.
+
+---
+
+## Provenance family
+
+Information/decision lineage — "how did we get from user intent to this
+artifact?" — distinct in purpose from the Trace family (chronological
+forensic execution) even though both may render facts drawn from the same
+underlying events. Components below live in
+`src/neoarc-agentic-ui/provenance/`, operate on `ProvenanceLineage`
+(`src/neoarc-agentic-contracts/provenance.ts`), and never infer a lineage
+edge from event ordering or timing proximity — an absent edge means absent.
+See `docs/PROVENANCE_MODEL.md`.
+
+---
+
+### ProvenanceEntityBadge
+
+**Purpose:** a small labeled badge for one `ProvenanceEntityKind` (intent /
+mission / task / knowledge / relationship / tool / decision / proposal /
+artifact) — purely presentational, reused by every other component in this
+family so the vocabulary reads identically everywhere.
+
+**Input model:** `entityKind: ProvenanceEntityKind`.
+
+**States:** one per entity kind (closed union).
+
+**Semantic events:** none.
+
+**Trace visibility:** none.
+
+**Example:** Component Gallery "ProvenanceEntityBadge / ProvenanceSummaryBar"
+entry.
+
+---
+
+### ProvenanceNodeCard / ProvenanceEdgeRow
+
+**Purpose:** `ProvenanceNodeCard` is one selectable lineage node — entity
+badge, label, timestamp when supplied. `ProvenanceEdgeRow` renders one
+supplied edge as from-label → relation → to-label, resolving labels via a
+caller-supplied `nodesById` lookup rather than reaching into a store itself;
+an unresolved endpoint falls back to its raw id, never a fabricated label.
+
+**Input model:** `ProvenanceNodeCard`: `node: ProvenanceNode`, `selected?`,
+`onSelect?`. `ProvenanceEdgeRow`: `edge: ProvenanceEdge`,
+`nodesById: ReadonlyMap<string, ProvenanceNode>`.
+
+**States:** selected/unselected node; resolved vs. unresolved edge endpoint.
+
+**Semantic events:** `ProvenanceNodeCard`'s `onSelect` is a plain callback
+(consistent with `AgentTaskRow`'s selection pattern), not a semantic UI
+event.
+
+**Trace visibility:** none.
+
+**Example:** Component Gallery "ProvenanceNodeCard / ProvenanceEdgeRow"
+entry.
+
+---
+
+### ProvenanceEvidenceEntry
+
+**Purpose:** one piece of evidence within a lineage, paired with how it was
+actually used (`KnowledgeUsageCategory`) — preserves the distinction that
+not everything retrieved counts as "used."
+
+**Input model:** `entry: EvidenceLineageEntry` (wraps `EvidenceSummary`,
+`proposal.ts`, plus `usage`).
+
+**States:** each `KnowledgeUsageCategory`; with/without `evidence.url`
+(external-link affordance).
+
+**Semantic events:** none.
+
+**Trace visibility:** none.
+
+**Example:** Component Gallery "ProvenanceEvidenceEntry / ProvenanceArtifactEntry"
+entry.
+
+---
+
+### ProvenanceArtifactEntry
+
+**Purpose:** one artifact within a lineage. Composes `ArtifactReferenceCard`
+(`conversation/`) for the artifact itself, adding only the provenance-specific
+"produced by" framing. When `producedByNodeId` is absent, that line is
+omitted entirely — never inferred, never rendered as "unknown producer."
+
+**Input model:** `entry: ArtifactLineageEntry`, optional
+`nodesById: ReadonlyMap<string, ProvenanceNode>`.
+
+**States:** with/without a resolvable producer node.
+
+**Semantic events:** none.
+
+**Trace visibility:** none.
+
+**Example:** Component Gallery "ProvenanceEvidenceEntry / ProvenanceArtifactEntry"
+entry.
+
+---
+
+### ProvenanceLineageList
+
+**Purpose:** renders a full supplied `ProvenanceLineage` as an ordered node
+list (by `occurredAt` when supplied) with each node's outgoing edges
+rendered beneath it — a list rendering chosen over a canvas/force-graph so
+it stays keyboard- and screen-reader navigable. A future
+`ProvenanceLineageGraph` could render the identical `ProvenanceLineage`
+differently without changing this contract.
+
+**Input model:** `lineage: ProvenanceLineage`, `selectedNodeId?`,
+`onSelectNode?`.
+
+**States:** empty lineage (`EmptyState`); nodes with/without outgoing edges.
+
+**Semantic events:** `onSelectNode` is a plain callback.
+
+**Trace visibility:** none.
+
+**Example:** Component Gallery "ProvenanceLineageList / ProvenanceInspector"
+entry; Provenance tab of the Execution Lab.
+
+---
+
+### ProvenanceInspector
+
+**Purpose:** detail panel for one selected `ProvenanceNode`: entity kind,
+label, timestamp, and its incoming/outgoing supplied edges (resolved via
+the full lineage the caller supplies).
+
+**Input model:** `node: ProvenanceNode | undefined`, `lineage: ProvenanceLineage`.
+
+**States:** no node selected (`EmptyState`); node with/without incoming or
+outgoing edges (each side shows an explicit "No supplied incoming/outgoing
+edges" line rather than nothing).
+
+**Semantic events:** none.
+
+**Trace visibility:** none.
+
+**Example:** Component Gallery "ProvenanceLineageList / ProvenanceInspector"
+entry.
+
+---
+
+### ProvenanceSummaryBar
+
+**Purpose:** a compact "N intents, N missions, ..." count strip over a
+supplied lineage, for use above `ProvenanceExplorer` or standalone in a
+smaller surface. Counts are derived purely from `lineage.nodes` — never a
+separate fetched total.
+
+**Input model:** `lineage: ProvenanceLineage`.
+
+**States:** renders nothing when the lineage has zero nodes; otherwise one
+badge+count per entity kind actually present.
+
+**Semantic events:** none.
+
+**Trace visibility:** none.
+
+**Example:** Component Gallery "ProvenanceEntityBadge / ProvenanceSummaryBar"
+entry.
+
+---
+
+### ProvenanceExplorer
+
+**Purpose:** the root Provenance surface — a master-detail composition of
+`ProvenanceLineageList` (left) and `ProvenanceInspector` (right) over one
+supplied lineage. Owns only the transient "which node is selected" UI
+state; the lineage itself is fully controlled, never fetched or mutated
+here.
+
+**Input model:** `lineage: ProvenanceLineage`, `title?`.
+
+**States:** no node selected initially; selection updates the inspector.
+
+**Semantic events:** none at this composition level (selection is internal
+UI state, not emitted).
+
+**Trace visibility:** none.
+
+**Example:** Component Gallery "ProvenanceExplorer" entry; Provenance tab of
+the Execution Lab.
 
 ---
 

@@ -124,6 +124,71 @@ test("applyEvent never mutates its input store", () => {
   assert.deepEqual(nextStore.order, ["counter:a"])
 })
 
+/**
+ * A second synthetic definition matching the SAME event type as
+ * `counterDefinition`, projecting a differently-keyed, differently-kinded
+ * node from it. Proves one event can legitimately fan out into multiple
+ * node kinds (Slice 5's Provenance family relies on exactly this: one
+ * `artifact.produced` event projects both a `provenance.node` and,
+ * separately, a `provenance.edge`) — `applyEvent` must run every matching
+ * definition, not stop after the first.
+ */
+const echoDefinition: AgenticNodeDefinition<unknown, { entityId: string }> = {
+  kind: "test.echo",
+  target: "test",
+  publicationCadence: "immediate",
+  match(event) {
+    return event.type === "test.counter.incremented" ? { matched: true, kind: "test.echo", target: "test" } : { matched: false }
+  },
+  project(event) {
+    const payload = event.payload as CounterPayload
+    return {
+      key: `echo:${event.id}`,
+      kind: "test.echo",
+      target: "test",
+      data: { entityId: payload.entityId },
+      visibility: "visible",
+      correlation: event.correlation,
+    }
+  },
+}
+
+test("one event matching two definitions projects both nodes, not just the first match", () => {
+  const event = counterEvent("evt-1", "a", 1, 1)
+  const store = applyEvent(createProjectionStore(), event, [counterDefinition, echoDefinition])
+  const nodes = selectNodes(store)
+
+  assert.deepEqual(nodes.map((node) => node.key), ["counter:a", "echo:evt-1"])
+  assert.equal(nodes[0].kind, "test.counter")
+  assert.equal(nodes[1].kind, "test.echo")
+})
+
+test("multi-match fan-out is order-independent: definition order never changes projected output", () => {
+  const event = counterEvent("evt-1", "a", 1, 1)
+  const forward = selectNodes(applyEvent(createProjectionStore(), event, [counterDefinition, echoDefinition]))
+  const reversed = selectNodes(applyEvent(createProjectionStore(), event, [echoDefinition, counterDefinition]))
+
+  // Node *contents* are identical either way — only the resulting node
+  // order in the store may legitimately differ, since each definition's
+  // key first-appears at a different point in the iteration.
+  const byKeyForward = new Map(forward.map((node) => [node.key, node]))
+  const byKeyReversed = new Map(reversed.map((node) => [node.key, node]))
+  assert.deepEqual(byKeyForward, byKeyReversed)
+})
+
+test("multi-match fan-out still converges: full replay === live append", () => {
+  const events = [
+    counterEvent("evt-1", "a", 1, 1),
+    counterEvent("evt-2", "b", 10, 2),
+    counterEvent("evt-3", "a", 2, 3),
+  ]
+
+  const fullReplay = applyEvents(createProjectionStore(), events, [counterDefinition, echoDefinition])
+  const liveAppend = events.reduce((store, event) => applyEvent(store, event, [counterDefinition, echoDefinition]), createProjectionStore())
+
+  assert.deepEqual(selectNodes(fullReplay), selectNodes(liveAppend))
+})
+
 test("replaying a prefix and continuing from there converges with a from-scratch full replay", () => {
   // Proves the store depends on no hidden mutable runtime state: resuming
   // from an intermediate, independently-computed store must produce the

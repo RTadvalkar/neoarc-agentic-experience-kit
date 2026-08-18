@@ -73,6 +73,42 @@ import { AgentTaskRow } from "../../../../src/neoarc-agentic-ui/runtime/agent-ta
 import { AgentTaskInspector } from "../../../../src/neoarc-agentic-ui/runtime/agent-task-inspector"
 import { WorkflowRunTree } from "../../../../src/neoarc-agentic-ui/runtime/workflow-run-tree"
 import { ExecutionTimeline } from "../../../../src/neoarc-agentic-ui/runtime/execution-timeline"
+import { TraceActor } from "../../../../src/neoarc-agentic-ui/trace/trace-actor"
+import { TraceRedactedValue } from "../../../../src/neoarc-agentic-ui/trace/trace-redacted-value"
+import { KnowledgeUsageBadge } from "../../../../src/neoarc-agentic-ui/trace/knowledge-usage-badge"
+import { RelationshipUsageBadge } from "../../../../src/neoarc-agentic-ui/trace/relationship-usage-badge"
+import { SystemInstructionTrace } from "../../../../src/neoarc-agentic-ui/trace/system-instruction-trace"
+import { UserInputTrace } from "../../../../src/neoarc-agentic-ui/trace/user-input-trace"
+import { ContextTrace } from "../../../../src/neoarc-agentic-ui/trace/context-trace"
+import { RuntimeRecipeTrace } from "../../../../src/neoarc-agentic-ui/trace/runtime-recipe-trace"
+import { ModelPolicyTrace } from "../../../../src/neoarc-agentic-ui/trace/model-policy-trace"
+import { ResolvedModelTrace } from "../../../../src/neoarc-agentic-ui/trace/resolved-model-trace"
+import { KnowledgeTrace } from "../../../../src/neoarc-agentic-ui/trace/knowledge-trace"
+import { RelationshipTrace } from "../../../../src/neoarc-agentic-ui/trace/relationship-trace"
+import { ToolTrace } from "../../../../src/neoarc-agentic-ui/trace/tool-trace"
+import { AgentActivityTrace } from "../../../../src/neoarc-agentic-ui/trace/agent-activity-trace"
+import { HumanInteractionTrace } from "../../../../src/neoarc-agentic-ui/trace/human-interaction-trace"
+import { ProposalTrace } from "../../../../src/neoarc-agentic-ui/trace/proposal-trace"
+import { ArtifactTrace } from "../../../../src/neoarc-agentic-ui/trace/artifact-trace"
+import { ErrorTrace } from "../../../../src/neoarc-agentic-ui/trace/error-trace"
+import { RetryTrace } from "../../../../src/neoarc-agentic-ui/trace/retry-trace"
+import { TraceEventRow } from "../../../../src/neoarc-agentic-ui/trace/trace-event-row"
+import { TraceInspector } from "../../../../src/neoarc-agentic-ui/trace/trace-inspector"
+import { TraceTimeline } from "../../../../src/neoarc-agentic-ui/trace/trace-timeline"
+import { TraceTurn } from "../../../../src/neoarc-agentic-ui/trace/trace-turn"
+import { TraceStep } from "../../../../src/neoarc-agentic-ui/trace/trace-step"
+import { TraceExplorer } from "../../../../src/neoarc-agentic-ui/trace/trace-explorer"
+import { TraceUsageSummary } from "../../../../src/neoarc-agentic-ui/trace/trace-usage-summary"
+import { TraceTimingSummary } from "../../../../src/neoarc-agentic-ui/trace/trace-timing-summary"
+import { ProvenanceEntityBadge } from "../../../../src/neoarc-agentic-ui/provenance/provenance-entity-badge"
+import { ProvenanceNodeCard } from "../../../../src/neoarc-agentic-ui/provenance/provenance-node-card"
+import { ProvenanceEdgeRow } from "../../../../src/neoarc-agentic-ui/provenance/provenance-edge-row"
+import { ProvenanceEvidenceEntry } from "../../../../src/neoarc-agentic-ui/provenance/provenance-evidence-entry"
+import { ProvenanceArtifactEntry } from "../../../../src/neoarc-agentic-ui/provenance/provenance-artifact-entry"
+import { ProvenanceLineageList } from "../../../../src/neoarc-agentic-ui/provenance/provenance-lineage-list"
+import { ProvenanceInspector } from "../../../../src/neoarc-agentic-ui/provenance/provenance-inspector"
+import { ProvenanceSummaryBar } from "../../../../src/neoarc-agentic-ui/provenance/provenance-summary-bar"
+import { ProvenanceExplorer } from "../../../../src/neoarc-agentic-ui/provenance/provenance-explorer"
 import {
   galleryActionAvailabilities,
   galleryAgent,
@@ -143,6 +179,38 @@ import {
   galleryWorkflowGroups,
   galleryWorkflowTasks,
 } from "../../../../lib/showcase/runtime-gallery-fixtures"
+import {
+  galleryArtifactLineageEntry,
+  galleryArtifactLineageEntryNoProducer,
+  galleryEvidenceLineageEntry,
+  galleryProvenanceEntityKinds,
+  galleryProvenanceLineage,
+} from "../../../../lib/showcase/provenance-gallery-fixtures"
+import {
+  galleryKnowledgeUsageCategories,
+  galleryRelationshipUsageCategories,
+  galleryResolvedModelAvailable,
+  galleryResolvedModelUnavailable,
+  galleryTraceEventAgentActivity,
+  galleryTraceEventArtifact,
+  galleryTraceEventContext,
+  galleryTraceEventError,
+  galleryTraceEventHumanInteraction,
+  galleryTraceEventKnowledge,
+  galleryTraceEventModelPolicy,
+  galleryTraceEventProposal,
+  galleryTraceEventRelationship,
+  galleryTraceEventRetry,
+  galleryTraceEventRuntimeRecipe,
+  galleryTraceEventSystemInstruction,
+  galleryTraceEventTool,
+  galleryTraceEventUserInput,
+  galleryTraceEvents,
+  galleryTraceStep,
+  galleryTraceTimingFixture,
+  galleryTraceTurn,
+  galleryTraceUsage,
+} from "../../../../lib/showcase/trace-gallery-fixtures"
 import { GalleryEntry, GalleryVariantRow } from "./gallery-entry"
 
 export interface ComponentGalleryProps {
@@ -153,6 +221,8 @@ export function ComponentGallery({ onEmitUIEvent }: ComponentGalleryProps) {
   const [activeEntityId, setActiveEntityId] = useState(gallerySectionContext.id)
   const [permissionDialogOpen, setPermissionDialogOpen] = useState(false)
   const [selectedGalleryTaskId, setSelectedGalleryTaskId] = useState(galleryTaskRunning.taskId)
+  const [selectedTraceEventId, setSelectedTraceEventId] = useState(galleryTraceEventKnowledge.id)
+  const [selectedProvenanceNodeId, setSelectedProvenanceNodeId] = useState<string | undefined>("node-relationship")
 
   return (
     <div className="flex flex-col gap-8 pb-4" aria-label="Foundation component gallery">
@@ -1080,6 +1150,328 @@ export function ComponentGallery({ onEmitUIEvent }: ComponentGalleryProps) {
           <div className="flex w-full max-w-md flex-col gap-3">
             <WorkflowRunTree groups={[]} tasks={new Map()} />
             <ExecutionTimeline steps={[]} />
+          </div>
+        </GalleryVariantRow>
+      </GalleryEntry>
+
+      <GalleryEntry
+        id="trace-actor-redacted-value"
+        name="TraceActor / TraceRedactedValue"
+        description="TraceActor is a compact 'who did this' line built on AgentAvatar for the leaner ActorSummary shape. TraceRedactedValue adapts an AvailableOr<T> field into the existing RedactedValue primitive rather than a second unavailable-reason treatment."
+        inputModel="TraceActor: actor: ActorSummary  |  TraceRedactedValue<T>: value: AvailableOr<T>, render: (value: T) => ReactNode"
+      >
+        <GalleryVariantRow label="Agent and human actors">
+          <TraceActor actor={galleryTraceEventSystemInstruction.actor!} />
+          <TraceActor actor={galleryTraceEventUserInput.actor!} />
+        </GalleryVariantRow>
+        <GalleryVariantRow label="Available vs. redacted (insufficient access)">
+          <TraceRedactedValue value={galleryResolvedModelAvailable} render={(route) => <code className="text-xs">{route.modelId}</code>} />
+          <TraceRedactedValue value={galleryResolvedModelUnavailable} render={(route) => <code className="text-xs">{route.modelId}</code>} />
+        </GalleryVariantRow>
+      </GalleryEntry>
+
+      <GalleryEntry
+        id="knowledge-relationship-usage-badge"
+        name="KnowledgeUsageBadge / RelationshipUsageBadge"
+        description="Closed-switch badges over KnowledgeUsageCategory and RelationshipUsageCategory — retrieved/selected/supplied/cited and retrieval/context/evidence/impact are kept visually distinct, never collapsed into a single 'used' label."
+        inputModel="KnowledgeUsageBadge: category: KnowledgeUsageCategory  |  RelationshipUsageBadge: category: RelationshipUsageCategory"
+      >
+        <GalleryVariantRow label="Knowledge usage categories">
+          {galleryKnowledgeUsageCategories.map((category) => (
+            <KnowledgeUsageBadge key={category} category={category} />
+          ))}
+        </GalleryVariantRow>
+        <GalleryVariantRow label="Relationship usage categories">
+          {galleryRelationshipUsageCategories.map((category) => (
+            <RelationshipUsageBadge key={category} category={category} />
+          ))}
+        </GalleryVariantRow>
+      </GalleryEntry>
+
+      <GalleryEntry
+        id="trace-instruction-input-context"
+        name="SystemInstructionTrace / UserInputTrace / ContextTrace"
+        description="Three of the per-kind Trace detail bodies TraceInspector dispatches to: instruction identity facts, verbatim user input (never summarized), and one supplied context fact."
+        inputModel="Each: detail: <KindTraceDetail>"
+      >
+        <GalleryVariantRow label="System instruction">
+          <SystemInstructionTrace detail={(galleryTraceEventSystemInstruction.detail as { kind: "system-instruction"; value: any }).value} />
+        </GalleryVariantRow>
+        <GalleryVariantRow label="User input (verbatim)">
+          <UserInputTrace detail={(galleryTraceEventUserInput.detail as { kind: "user-input"; value: any }).value} />
+        </GalleryVariantRow>
+        <GalleryVariantRow label="Context">
+          <ContextTrace detail={(galleryTraceEventContext.detail as { kind: "context"; value: any }).value} />
+        </GalleryVariantRow>
+      </GalleryEntry>
+
+      <GalleryEntry
+        id="trace-recipe-policy-model"
+        name="RuntimeRecipeTrace / ModelPolicyTrace / ResolvedModelTrace"
+        description="Runtime recipe and model policy identity facts render as plain metadata; the resolved model route is permission-aware and composes TraceRedactedValue rather than fabricating a model name when withheld."
+        inputModel="RuntimeRecipeTrace/ModelPolicyTrace: detail  |  ResolvedModelTrace: resolvedModel: AvailableOr<TraceModelRoute>"
+      >
+        <GalleryVariantRow label="Runtime recipe and model policy">
+          <RuntimeRecipeTrace detail={(galleryTraceEventRuntimeRecipe.detail as { kind: "runtime-recipe"; value: any }).value} />
+          <ModelPolicyTrace detail={(galleryTraceEventModelPolicy.detail as { kind: "model-policy"; value: any }).value} />
+        </GalleryVariantRow>
+        <GalleryVariantRow label="Resolved model — available vs. redacted">
+          <ResolvedModelTrace resolvedModel={galleryResolvedModelAvailable} />
+          <ResolvedModelTrace resolvedModel={galleryResolvedModelUnavailable} />
+        </GalleryVariantRow>
+      </GalleryEntry>
+
+      <GalleryEntry
+        id="trace-knowledge-relationship"
+        name="KnowledgeTrace / RelationshipTrace"
+        description="KnowledgeTrace renders one supplied KnowledgeUsage fact with its category badge and score only when supplied. RelationshipTrace renders source -> predicate -> target with usage category — never inferring importance from traversal depth alone."
+        inputModel="KnowledgeTrace: usage: KnowledgeUsage  |  RelationshipTrace: detail: RelationshipUsage"
+      >
+        <GalleryVariantRow label="Knowledge usage (with score)">
+          <KnowledgeTrace usage={(galleryTraceEventKnowledge.detail as { kind: "knowledge"; value: any }).value} />
+        </GalleryVariantRow>
+        <GalleryVariantRow label="Relationship usage (evidence)">
+          <RelationshipTrace detail={(galleryTraceEventRelationship.detail as { kind: "relationship"; value: any }).value} />
+        </GalleryVariantRow>
+      </GalleryEntry>
+
+      <GalleryEntry
+        id="trace-tool-activity"
+        name="ToolTrace / AgentActivityTrace"
+        description="ToolTrace is a sanitized tool-invocation summary — never raw tool I/O, only the adapter's own actionSummary/resultSummary text. AgentActivityTrace reuses the same safe-summary vocabulary as ActivitySummary."
+        inputModel="ToolTrace: detail: ToolTraceDetail  |  AgentActivityTrace: detail: AgentActivityTraceDetail"
+      >
+        <GalleryVariantRow label="Completed tool call">
+          <ToolTrace detail={(galleryTraceEventTool.detail as { kind: "tool"; value: any }).value} />
+        </GalleryVariantRow>
+        <GalleryVariantRow label="Running activity">
+          <AgentActivityTrace detail={(galleryTraceEventAgentActivity.detail as { kind: "agent-activity"; value: any }).value} />
+        </GalleryVariantRow>
+      </GalleryEntry>
+
+      <GalleryEntry
+        id="trace-human-proposal"
+        name="HumanInteractionTrace / ProposalTrace"
+        description="The two approval domains stay visually distinct: HumanInteractionTrace covers only clarification/execution-permission facts, while business-decision (proposal review) facts project to the separate ProposalTrace — never one generic shape."
+        inputModel="HumanInteractionTrace: detail: HumanInteractionTraceDetail  |  ProposalTrace: detail: ProposalTraceDetail"
+      >
+        <GalleryVariantRow label="Resolved clarification">
+          <HumanInteractionTrace detail={(galleryTraceEventHumanInteraction.detail as { kind: "human-interaction"; value: any }).value} />
+        </GalleryVariantRow>
+        <GalleryVariantRow label="Approved proposal">
+          <ProposalTrace detail={(galleryTraceEventProposal.detail as { kind: "proposal"; value: any }).value} />
+        </GalleryVariantRow>
+      </GalleryEntry>
+
+      <GalleryEntry
+        id="trace-artifact-error-retry"
+        name="ArtifactTrace / ErrorTrace / RetryTrace"
+        description="ArtifactTrace reuses ArtifactRef as-is. ErrorTrace is a read-only RunError rendering — unlike RunErrorPanel it never offers a retry action, since Trace is a record of what happened. RetryTrace is kept distinct from ErrorTrace per the reserved retry.scheduled vocabulary."
+        inputModel="ArtifactTrace: detail: ArtifactRef  |  ErrorTrace: detail: RunError  |  RetryTrace: detail: RetryTraceDetail"
+      >
+        <GalleryVariantRow label="Produced artifact">
+          <ArtifactTrace detail={(galleryTraceEventArtifact.detail as { kind: "artifact"; value: any }).value} />
+        </GalleryVariantRow>
+        <GalleryVariantRow label="Retryable error, then a scheduled retry">
+          <div className="flex w-full max-w-md flex-col gap-2">
+            <ErrorTrace detail={(galleryTraceEventError.detail as { kind: "error"; value: any }).value} />
+            <RetryTrace detail={(galleryTraceEventRetry.detail as { kind: "retry"; value: any }).value} />
+          </div>
+        </GalleryVariantRow>
+      </GalleryEntry>
+
+      <GalleryEntry
+        id="trace-event-row-inspector"
+        name="TraceEventRow / TraceInspector"
+        description="TraceEventRow is one forensic row — kind badge, honest one-line summary derived only from the event's own supplied fields, actor, timestamp. TraceInspector is its detail panel, dispatching on detail.kind through a closed switch."
+        inputModel="TraceEventRow: event: TraceEvent, selected?, onEmitSelect?  |  TraceInspector: event: TraceEvent | undefined"
+      >
+        <GalleryVariantRow label="Selectable rows (a few kinds)">
+          <div className="flex w-full max-w-md flex-col gap-1.5">
+            {[galleryTraceEventKnowledge, galleryTraceEventTool, galleryTraceEventError].map((event) => (
+              <TraceEventRow
+                key={event.id}
+                event={event}
+                selected={event.id === selectedTraceEventId}
+                onEmitSelect={(uiEvent) => setSelectedTraceEventId(uiEvent.payload.eventId)}
+              />
+            ))}
+          </div>
+        </GalleryVariantRow>
+        <GalleryVariantRow label="Inspector for the selected row above">
+          <div className="w-full max-w-md">
+            <TraceInspector event={galleryTraceEvents.find((event) => event.id === selectedTraceEventId)} />
+          </div>
+        </GalleryVariantRow>
+        <GalleryVariantRow label="No event selected">
+          <div className="w-full max-w-md">
+            <TraceInspector event={undefined} />
+          </div>
+        </GalleryVariantRow>
+      </GalleryEntry>
+
+      <GalleryEntry
+        id="trace-timeline-turn-step"
+        name="TraceTimeline / TraceTurn / TraceStep"
+        description="TraceTimeline is the flat chronological sibling of turn/step grouping: TraceTurn and TraceStep are collapsible disclosure headers wrapping whatever TraceEventRow children the caller supplies."
+        inputModel="TraceTimeline: events: TraceEvent[]  |  TraceTurn: turn, eventCount  |  TraceStep: step, eventCount"
+      >
+        <GalleryVariantRow label="Flat timeline (3 events)">
+          <div className="w-full max-w-md">
+            <TraceTimeline events={galleryTraceEvents.slice(0, 3)} />
+          </div>
+        </GalleryVariantRow>
+        <GalleryVariantRow label="Turn containing a step">
+          <div className="w-full max-w-md">
+            <TraceTurn turn={galleryTraceTurn} eventCount={galleryTraceEvents.length}>
+              <TraceStep step={galleryTraceStep} eventCount={3}>
+                <TraceEventRow event={galleryTraceEventKnowledge} />
+                <TraceEventRow event={galleryTraceEventRelationship} />
+                <TraceEventRow event={galleryTraceEventTool} />
+              </TraceStep>
+            </TraceTurn>
+          </div>
+        </GalleryVariantRow>
+        <GalleryVariantRow label="Empty timeline">
+          <div className="w-full max-w-md">
+            <TraceTimeline events={[]} />
+          </div>
+        </GalleryVariantRow>
+      </GalleryEntry>
+
+      <GalleryEntry
+        id="trace-explorer"
+        name="TraceExplorer"
+        description="Root Trace surface: filter + search controls over a flat events array, plus a TraceInspector detail panel — the same composition the Trace tab uses, exercised here with a standalone gallery event set."
+        inputModel="events: TraceEvent[], turns?, steps?, filterKinds?, searchQuery?, onEmitEvent?"
+      >
+        <GalleryVariantRow label="Interactive — filter, search, and select">
+          <div className="w-full">
+            <TraceExplorer events={galleryTraceEvents} />
+          </div>
+        </GalleryVariantRow>
+      </GalleryEntry>
+
+      <GalleryEntry
+        id="trace-summaries"
+        name="TraceUsageSummary / TraceTimingSummary"
+        description="Supplied token/cost and latency facts. Every field is optional and omitted entirely — never shown as '0' or fabricated — when not supplied by the adapter."
+        inputModel="TraceUsageSummary: usage: TraceUsage | undefined  |  TraceTimingSummary: timing: TraceTiming | undefined"
+      >
+        <GalleryVariantRow label="Supplied usage and timing">
+          <div className="flex w-full max-w-md flex-col gap-3">
+            <TraceUsageSummary usage={galleryTraceUsage} />
+            <TraceTimingSummary timing={galleryTraceTimingFixture} />
+          </div>
+        </GalleryVariantRow>
+        <GalleryVariantRow label="Not supplied (renders nothing)">
+          <div className="w-full max-w-md text-xs text-[var(--neoarc-color-foreground-subtle)]">
+            <TraceUsageSummary usage={undefined} />
+            <TraceTimingSummary timing={undefined} />
+            (nothing rendered above — no fabricated zeros)
+          </div>
+        </GalleryVariantRow>
+      </GalleryEntry>
+
+      <GalleryEntry
+        id="provenance-entity-badge-summary"
+        name="ProvenanceEntityBadge / ProvenanceSummaryBar"
+        description="ProvenanceEntityBadge labels one ProvenanceEntityKind consistently across the whole Provenance family. ProvenanceSummaryBar is a compact count strip derived purely from the supplied lineage.nodes — never a separate fetched total."
+        inputModel="ProvenanceEntityBadge: entityKind: ProvenanceEntityKind  |  ProvenanceSummaryBar: lineage: ProvenanceLineage"
+      >
+        <GalleryVariantRow label="All entity kinds">
+          {galleryProvenanceEntityKinds.map((kind) => (
+            <ProvenanceEntityBadge key={kind} entityKind={kind} />
+          ))}
+        </GalleryVariantRow>
+        <GalleryVariantRow label="Summary bar over the gallery lineage">
+          <ProvenanceSummaryBar lineage={galleryProvenanceLineage} />
+        </GalleryVariantRow>
+      </GalleryEntry>
+
+      <GalleryEntry
+        id="provenance-node-card-edge-row"
+        name="ProvenanceNodeCard / ProvenanceEdgeRow"
+        description="ProvenanceNodeCard is one selectable lineage node. ProvenanceEdgeRow renders one supplied edge as from-label -> relation -> to-label, resolving labels via a caller-supplied lookup rather than reaching into a store itself."
+        inputModel="ProvenanceNodeCard: node, selected?, onSelect?  |  ProvenanceEdgeRow: edge, nodesById"
+      >
+        <GalleryVariantRow label="Selectable node card">
+          <div className="w-full max-w-md">
+            <ProvenanceNodeCard node={galleryProvenanceLineage.nodes[3]} selected />
+          </div>
+        </GalleryVariantRow>
+        <GalleryVariantRow label="Edge row">
+          <div className="w-full max-w-md">
+            <ProvenanceEdgeRow
+              edge={galleryProvenanceLineage.edges[3]}
+              nodesById={new Map(galleryProvenanceLineage.nodes.map((node) => [node.id, node]))}
+            />
+          </div>
+        </GalleryVariantRow>
+      </GalleryEntry>
+
+      <GalleryEntry
+        id="provenance-evidence-artifact-entry"
+        name="ProvenanceEvidenceEntry / ProvenanceArtifactEntry"
+        description="ProvenanceEvidenceEntry pairs one EvidenceSummary with how it was actually used (KnowledgeUsageCategory) — not everything retrieved counts as used. ProvenanceArtifactEntry composes ArtifactReferenceCard, omitting the 'produced by' line entirely when no producer node is supplied."
+        inputModel="ProvenanceEvidenceEntry: entry: EvidenceLineageEntry  |  ProvenanceArtifactEntry: entry: ArtifactLineageEntry, nodesById?"
+      >
+        <GalleryVariantRow label="Evidence, cited">
+          <div className="w-full max-w-md">
+            <ProvenanceEvidenceEntry entry={galleryEvidenceLineageEntry} />
+          </div>
+        </GalleryVariantRow>
+        <GalleryVariantRow label="Artifact with producer, and without">
+          <div className="flex w-full max-w-md flex-col gap-2">
+            <ProvenanceArtifactEntry
+              entry={galleryArtifactLineageEntry}
+              nodesById={new Map(galleryProvenanceLineage.nodes.map((node) => [node.id, node]))}
+            />
+            <ProvenanceArtifactEntry entry={galleryArtifactLineageEntryNoProducer} />
+          </div>
+        </GalleryVariantRow>
+      </GalleryEntry>
+
+      <GalleryEntry
+        id="provenance-lineage-list-inspector"
+        name="ProvenanceLineageList / ProvenanceInspector"
+        description="ProvenanceLineageList renders a full supplied lineage as an ordered, keyboard-navigable node list with outgoing edges beneath each node — chosen over a canvas/force-graph for accessibility. ProvenanceInspector is the detail panel for one selected node's incoming/outgoing edges."
+        inputModel="ProvenanceLineageList: lineage, selectedNodeId?, onSelectNode?  |  ProvenanceInspector: node, lineage"
+      >
+        <GalleryVariantRow label="Interactive lineage list">
+          <div className="w-full max-w-md">
+            <ProvenanceLineageList
+              lineage={galleryProvenanceLineage}
+              selectedNodeId={selectedProvenanceNodeId}
+              onSelectNode={(node) => setSelectedProvenanceNodeId(node.id)}
+            />
+          </div>
+        </GalleryVariantRow>
+        <GalleryVariantRow label="Inspector for the selected node above">
+          <div className="w-full max-w-md">
+            <ProvenanceInspector
+              node={galleryProvenanceLineage.nodes.find((node) => node.id === selectedProvenanceNodeId)}
+              lineage={galleryProvenanceLineage}
+            />
+          </div>
+        </GalleryVariantRow>
+        <GalleryVariantRow label="No node selected, and an empty lineage">
+          <div className="flex w-full max-w-md flex-col gap-3">
+            <ProvenanceInspector node={undefined} lineage={galleryProvenanceLineage} />
+            <ProvenanceLineageList lineage={{ nodes: [], edges: [] }} />
+          </div>
+        </GalleryVariantRow>
+      </GalleryEntry>
+
+      <GalleryEntry
+        id="provenance-explorer"
+        name="ProvenanceExplorer"
+        description="Root Provenance surface: a master-detail composition of ProvenanceLineageList and ProvenanceInspector over one supplied lineage, owning only the transient 'which node is selected' UI state."
+        inputModel="lineage: ProvenanceLineage, title?"
+      >
+        <GalleryVariantRow label="Interactive">
+          <div className="w-full">
+            <ProvenanceExplorer lineage={galleryProvenanceLineage} />
           </div>
         </GalleryVariantRow>
       </GalleryEntry>
