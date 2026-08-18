@@ -9,12 +9,14 @@
  * displays raw tool arguments; only the supplied
  * `ToolActionIdentity.actionSummary`/`targetLabel`.
  *
- * States: `pending` (awaiting a human decision — action buttons live),
- * `submitted` (intent emitted, backend has not yet confirmed — buttons
- * disabled, an explicit "action pending" indicator shown), `resolved` (an
- * authoritative `outcome` was supplied — `PermissionOutcomeBadge` shown,
- * never buttons), and the honest `unavailable` outcome renders as a blocked
- * state rather than a resolved success/failure.
+ * Four mutually exclusive render modes (see
+ * `resolveExecutionPermissionCardMode`): `pending` (awaiting a human
+ * decision — action buttons live, enabled), `submitted` (intent emitted,
+ * backend has not yet confirmed — buttons disabled, an explicit "action
+ * pending" indicator shown), `resolved` (an authoritative `outcome` other
+ * than `unavailable` was supplied — `PermissionOutcomeBadge` shown, never
+ * buttons), and `blocked` (the honest `unavailable` outcome — rendered via
+ * `PermissionBlockedState`, never as a resolved success/failure).
  *
  * Semantic UI events: `permission.allowOnce.request`,
  * `permission.reject.request`, `permission.cancel.request`. Emitting one
@@ -63,8 +65,7 @@ export function ExecutionPermissionCard({
   className,
 }: ExecutionPermissionCardProps) {
   const mode = resolveExecutionPermissionCardMode(request)
-  const submitting = request.status === "submitted"
-  const resolved = mode === "resolved"
+  const submitting = mode === "submitted"
 
   function emit(
     handler: ((event: AgenticUIEvent<{ readonly requestId: string }>) => void) | undefined,
@@ -118,7 +119,7 @@ export function ExecutionPermissionCard({
 
       <PermissionReason text={request.consequenceSummary} tone="consequence" />
 
-      {resolved && request.outcome ? (
+      {request.status === "resolved" ? (
         <div className="flex items-center gap-2">
           <PermissionOutcomeBadge outcome={request.outcome} />
         </div>
