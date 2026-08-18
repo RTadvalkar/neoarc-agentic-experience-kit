@@ -1,4 +1,4 @@
-# Data Model (Slice 1 — Foundation)
+# Data Model (Slice 1 — Foundation, Slice 2 — Conversation & Replay)
 
 Owning package: `src/neoarc-agentic-contracts`. Plain TypeScript, zero
 framework/runtime dependencies. Every type here is a **normalized view
@@ -48,6 +48,32 @@ See `EVENT_MODEL.md` for the full description of `AgenticEventEnvelope`,
 See `PROJECTION_MODEL.md`. Summarized: `AgenticViewTarget`,
 `PublicationCadence`, `AgenticViewNodeVisibility`, `AgenticViewNode<TData>`,
 `MatchResult`, `ProjectionContext`, `AgenticNodeDefinition<TPayload, TData>`.
+
+## Conversation models (`conversation.ts`, Slice 2)
+
+`ConversationThread.items: readonly ConversationTimelineItem[]` is what
+`AgentConversation` renders directly — and, on the projected path, exactly
+what `AgenticViewNode<ConversationTimelineItem>.data` holds once
+`conversation-node-definitions.ts` projects an event. One shape, two ways
+in; see the module doc comment in `conversation.ts` and
+`INTEGRATION_GUIDE.md`'s two integration modes.
+
+| Type | Key fields | Notes |
+|---|---|---|
+| `MessageAuthor` | alias of `ActorSummary` | Kept as a distinct name for call-site clarity; not a duplicated shape. |
+| `TextBlock` / `MarkdownBlock` | `kind, text` / `kind, markdown` | `MessageContentBlock` union rendered by `MessageContentRenderer`'s dependency-free formatter — never `dangerouslySetInnerHTML`. |
+| `CitationRef` | `id, label, sourceLabel?, url?, retrievedAt?` | Never fabricated; only ever what a message supplies. |
+| `AttachmentRef` | `id, name, mimeType?, sizeBytes?, url?` | Metadata only — no inline content assumed safe to preview. |
+| `ArtifactRef` | `id, name, artifactType?, version?, status?, url?` | Reused both inline on a message and as the standalone `conversation.artifact` item payload. |
+| `ClarificationRequest` | `id, question, options?, resolved, resolution?` | `resolved`/`resolution` are both explicit — never inferred from a later message. |
+| `ActivitySummary` | `id, label, occurredAt, status?` | A safe observable summary line, never a chain-of-thought fragment (`docs/TRACEABILITY_PRINCIPLES.md` §1). |
+| `ToolActivitySummary` | `id, toolName, status, summary?, startedAt?, completedAt?` | `summary` is the only thing ever rendered — raw tool I/O is never assumed safe. |
+| `HandoffSummary` | `id, fromAgent, toAgent, reason?, status` | `fromAgent`/`toAgent` are `ActorSummary`, not duplicated agent fields. |
+| `AsyncWorkSummary` | `id, label, status, etaLabel?` | Direct-view-model only — no built-in projected node kind covers this. |
+| `ConversationNoticePayload` / `ConversationErrorPayload` / `ConversationRetryPayload` | tone/title/description; message/retryable/causeSummary?; attempt/maxAttempts?/reason?/nextAttemptAt? | The three one-shot, envelope-identified item payloads (see `PROJECTION_MODEL.md`). |
+| `ConversationMessage` | `id, author, createdAt, content, citations?, attachments?, artifacts?, status?, streaming?, correlation?` | One shape for both human and agent authors; `author.kind` decides rendering. `streaming: true` marks a message still receiving `conversation.message.delta` events. |
+| `ConversationTimelineItem` | discriminated union of 10 kinds | `ConversationItemKind` mirrors the ten built-in projected node kinds 1:1: `user-message, agent-message, activity, tool, clarification, handoff, artifact, notice, error, retry`. |
+| `ConversationThread` | `id, items` | The direct-path root value. |
 
 ## Composition rules
 
