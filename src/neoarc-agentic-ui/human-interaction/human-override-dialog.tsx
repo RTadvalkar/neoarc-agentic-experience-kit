@@ -47,9 +47,10 @@ export function HumanOverrideDialog({
 }: HumanOverrideDialogProps) {
   const [justification, setJustification] = React.useState("")
 
-  React.useEffect(() => {
-    if (!open) setJustification("")
-  }, [open])
+  function handleOpenChange(next: boolean) {
+    if (!next) setJustification("")
+    onOpenChange(next)
+  }
 
   function submit() {
     const trimmed = justification.trim()
@@ -64,7 +65,7 @@ export function HumanOverrideDialog({
   }
 
   return (
-    <AlertDialog.Root open={open} onOpenChange={onOpenChange}>
+    <AlertDialog.Root open={open} onOpenChange={handleOpenChange}>
       <AlertDialog.Portal>
         <AlertDialog.Backdrop className="fixed inset-0 z-40 bg-[var(--neoarc-color-overlay)]" />
         <AlertDialog.Popup
@@ -112,7 +113,7 @@ export function HumanOverrideDialog({
           <div className="mt-3 flex items-center justify-end gap-2">
             <button
               type="button"
-              onClick={() => onOpenChange(false)}
+              onClick={() => handleOpenChange(false)}
               disabled={submitting}
               className="rounded-[var(--neoarc-radius-md)] border border-[var(--neoarc-color-border)] bg-transparent px-3 py-1.5 text-xs font-medium text-[var(--neoarc-color-foreground-muted)]"
             >

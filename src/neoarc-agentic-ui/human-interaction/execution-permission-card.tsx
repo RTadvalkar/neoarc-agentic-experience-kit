@@ -39,6 +39,7 @@ import { Spinner } from "../primitives/spinner"
 import { cn } from "../lib/cn"
 import { PermissionReason } from "./permission-reason"
 import { PermissionOutcomeBadge } from "./permission-outcome-badge"
+import { resolveExecutionPermissionCardMode } from "./human-interaction-logic"
 
 export interface ExecutionPermissionCardProps {
   readonly request: ExecutionPermissionRequest
@@ -61,8 +62,9 @@ export function ExecutionPermissionCard({
   onEmitCancel,
   className,
 }: ExecutionPermissionCardProps) {
+  const mode = resolveExecutionPermissionCardMode(request)
   const submitting = request.status === "submitted"
-  const resolved = request.status === "resolved"
+  const resolved = mode === "resolved"
 
   function emit(
     handler: ((event: AgenticUIEvent<{ readonly requestId: string }>) => void) | undefined,
@@ -77,7 +79,7 @@ export function ExecutionPermissionCard({
     )
   }
 
-  if (resolved && request.outcome === "unavailable") {
+  if (mode === "blocked") {
     return (
       <PermissionBlockedState
         className={className}

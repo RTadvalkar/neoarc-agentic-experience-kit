@@ -28,6 +28,7 @@ import type {
 import { createUIEvent, type AgenticUIEvent } from "../../neoarc-agentic-contracts/ui-events"
 import { Spinner } from "../primitives/spinner"
 import { cn } from "../lib/cn"
+import { resolveVisibleDecisionPermissions } from "./human-interaction-logic"
 
 export interface DecisionBarProps {
   readonly proposalId: ProposalSummary["id"]
@@ -129,9 +130,7 @@ export function DecisionBar({
     )
   }
 
-  const visiblePermissions = decisionPermissions.filter(
-    (permission) => permission.action !== "override" || onRequestOverride,
-  )
+  const visiblePermissions = resolveVisibleDecisionPermissions(decisionPermissions, Boolean(onRequestOverride))
 
   if (visiblePermissions.length === 0) {
     return null
