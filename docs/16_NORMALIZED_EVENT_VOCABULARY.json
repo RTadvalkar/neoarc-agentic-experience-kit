@@ -1,0 +1,83 @@
+{
+  "packVersion": "FINAL-greenfield-1.0",
+  "note": "Illustrative normalized UI/runtime-adapter vocabulary. Product backends do not need to emit these event names directly.",
+  "categories": {
+    "execution": [
+      "execution.started",
+      "execution.completed",
+      "execution.failed"
+    ],
+    "mission": [
+      "mission.started",
+      "mission.updated",
+      "mission.completed",
+      "mission.failed"
+    ],
+    "run": [
+      "run.started",
+      "run.waiting_for_human",
+      "run.completed",
+      "run.failed",
+      "run.cancel_requested",
+      "run.cancelled"
+    ],
+    "task": [
+      "task.started",
+      "task.progress",
+      "task.completed",
+      "task.failed"
+    ],
+    "turnStep": [
+      "turn.started",
+      "turn.completed",
+      "step.started",
+      "step.completed"
+    ],
+    "inputContext": [
+      "system_instruction.active",
+      "user_input.received",
+      "context.supplied",
+      "runtime_recipe.active",
+      "model_policy.active",
+      "model_route.resolved"
+    ],
+    "knowledge": [
+      "knowledge.retrieved",
+      "knowledge.selected",
+      "knowledge.supplied",
+      "knowledge.cited"
+    ],
+    "relationship": [
+      "relationship.traversed",
+      "relationship.used"
+    ],
+    "tool": [
+      "tool.started",
+      "tool.completed",
+      "tool.failed"
+    ],
+    "humanInteraction": [
+      "human.clarification.requested",
+      "human.clarification.resolved",
+      "permission.requested",
+      "permission.resolved",
+      "proposal.review.requested",
+      "proposal.review.resolved"
+    ],
+    "proposal": [
+      "proposal.created",
+      "proposal.revised",
+      "proposal.finalized"
+    ],
+    "artifact": [
+      "artifact.started",
+      "artifact.produced",
+      "artifact.failed"
+    ],
+    "retryError": [
+      "retry.scheduled",
+      "retry.started",
+      "error.recorded"
+    ]
+  }
+}
