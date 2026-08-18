@@ -51,35 +51,54 @@ export function selectNodes(store: ProjectionStore): readonly AgenticViewNode[] 
 
 /**
  * Apply exactly one event to a store, returning a NEW store (never mutates
- * the input) with the resulting node upserted. If no definition matches the
- * event, the store is returned unchanged — an unrecognized event type is
- * not an error, it simply projects nothing (the generic renderer fallback
- * handles unrecognized *node kinds*; this handles events with no matching
- * definition at all, e.g. a foundation-only fixture event fed through a
- * conversation-only definition list).
+ * the input) with the resulting node(s) upserted. Every definition whose
+ * `match` matches the event gets to `project()` — not just the first — so
+ * one event can legitimately fan out into multiple node kinds (e.g.
+ * Slice 5's Provenance family projects both a `provenance.node` and,
+ * when the event supplies a producer reference, a separate
+ * `provenance.edge` from the same `artifact.produced` event). If no
+ * definition matches, the store is returned unchanged (the same object
+ * reference) — an unrecognized event type is not an error, it simply
+ * projects nothing (the generic renderer fallback handles unrecognized
+ * *node kinds*; this handles events with no matching definition at all,
+ * e.g. a foundation-only fixture event fed through a conversation-only
+ * definition list). `context.findExistingNode` always reads the
+ * store as it stood *before* this event, so sibling definitions matching
+ * the same event never see each other's just-projected node — order
+ * within `definitions` never changes projected output, only which
+ * definition happens to run first.
  */
 export function applyEvent(
   store: ProjectionStore,
   event: AgenticEventEnvelope,
   definitions: readonly AgenticNodeDefinition[],
 ): ProjectionStore {
+  const context = {
+    correlation: event.correlation,
+    findExistingNode: (key: OpaqueId) => store.nodesByKey.get(key),
+  }
+
+  let nodesByKey: Map<OpaqueId, AgenticViewNode> | undefined
+  let order = store.order
+  let changed = false
+
   for (const definition of definitions) {
     const match = definition.match(event)
     if (!match.matched) continue
 
-    const context = {
-      correlation: event.correlation,
-      findExistingNode: (key: OpaqueId) => store.nodesByKey.get(key),
-    }
     const node = definition.project(event, context)
 
-    const nextNodesByKey = new Map(store.nodesByKey)
-    nextNodesByKey.set(node.key, node)
-    const nextOrder = store.order.includes(node.key) ? store.order : [...store.order, node.key]
-
-    return { nodesByKey: nextNodesByKey, order: nextOrder }
+    if (!nodesByKey) {
+      nodesByKey = new Map(store.nodesByKey)
+      changed = true
+    }
+    nodesByKey.set(node.key, node)
+    if (!order.includes(node.key)) {
+      order = [...order, node.key]
+    }
   }
-  return store
+
+  return changed && nodesByKey ? { nodesByKey, order } : store
 }
 
 /**
