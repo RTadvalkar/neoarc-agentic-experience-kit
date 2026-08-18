@@ -10,7 +10,7 @@
  * projection seam over showcase-only fixtures — see lib/showcase/.
  */
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import type { AgenticUIEvent } from "../../src/neoarc-agentic-contracts/ui-events"
@@ -21,7 +21,7 @@ import { SectionHeader } from "../../src/neoarc-agentic-ui/foundation/section-he
 import { InlineNotice } from "../../src/neoarc-agentic-ui/foundation/inline-notice"
 import { Badge } from "../../src/neoarc-agentic-ui/primitives/badge"
 import { Surface } from "../../src/neoarc-agentic-ui/primitives/surface"
-import { executionLabScenarios } from "../../lib/showcase/fixtures"
+import { allExecutionLabScenarios } from "../../lib/showcase/all-scenarios"
 import { executionLabRendererRegistry, executionLabSurfaceRegistry } from "../../lib/showcase/registry-bootstrap"
 import { ScenarioSelector } from "../../components/showcase/execution-lab/scenario-selector"
 import { LabTabBar } from "../../components/showcase/execution-lab/lab-tab-bar"
@@ -32,17 +32,31 @@ import { EventLog } from "../../components/showcase/execution-lab/event-log"
 import { ReplayControls } from "../../components/showcase/execution-lab/replay-controls"
 import { ThemeToggle } from "../../components/showcase/execution-lab/theme-toggle"
 import { ComponentGallery } from "../../components/showcase/execution-lab/component-gallery/component-gallery"
+import { useEventReplay } from "../../components/showcase/execution-lab/use-event-replay"
 
 export default function ExecutionLabPage() {
   const [activeMode, setActiveMode] = useState<LabMode>("scenario")
-  const [activeScenarioId, setActiveScenarioId] = useState(executionLabScenarios[0].id)
+  const [activeScenarioId, setActiveScenarioId] = useState(allExecutionLabScenarios[0].id)
   const [activeTarget, setActiveTarget] = useState<AgenticViewTarget>("conversation")
   const [selectedNode, setSelectedNode] = useState<AgenticViewNode | undefined>(undefined)
   const [uiEvents, setUiEvents] = useState<readonly AgenticUIEvent[]>([])
 
   const scenario = useMemo(
-    () => executionLabScenarios.find((s) => s.id === activeScenarioId) ?? executionLabScenarios[0],
+    () => allExecutionLabScenarios.find((s) => s.id === activeScenarioId) ?? allExecutionLabScenarios[0],
     [activeScenarioId],
+  )
+
+  const replay = useEventReplay(scenario.events.length)
+
+  // A newly selected scenario always starts its replay from index 0 and
+  // clears the inspector selection — see docs/04 §8 "Reset" semantics.
+  useEffect(() => {
+    setSelectedNode(undefined)
+  }, [activeScenarioId])
+
+  const currentEvent = useMemo(
+    () => (replay.currentIndex > 0 ? scenario.events[replay.currentIndex - 1] : undefined),
+    [scenario, replay.currentIndex],
   )
 
   const selectedEvent = useMemo(() => {
@@ -83,7 +97,7 @@ export default function ExecutionLabPage() {
                 {action.label}
               </Badge>
             ))}
-            <ReplayControls />
+            {activeMode === "scenario" ? <ReplayControls replay={replay} /> : null}
             <ThemeToggle />
           </div>
         </div>
@@ -99,7 +113,7 @@ export default function ExecutionLabPage() {
           </div>
           {activeMode === "scenario" ? (
             <ScenarioSelector
-              scenarios={executionLabScenarios}
+              scenarios={allExecutionLabScenarios}
               activeScenarioId={activeScenarioId}
               onSelect={handleScenarioSelect}
             />
@@ -123,7 +137,8 @@ export default function ExecutionLabPage() {
               <div className="min-h-0 flex-1 overflow-auto py-2">
                 <RenderCanvas
                   target={activeTarget}
-                  events={scenario.events}
+                  scenario={scenario}
+                  visibleEventCount={replay.currentIndex}
                   selectedNodeKey={selectedNode?.key}
                   onSelectNode={setSelectedNode}
                   onEmitUIEvent={handleEmitUIEvent}
@@ -137,17 +152,23 @@ export default function ExecutionLabPage() {
               <Surface className="flex min-h-0 flex-1 flex-col gap-4 p-4">
                 <SectionHeader
                   title="Inspectors"
-                  description="Selecting a rendered node fills both inspectors below with that node's data."
+                  description="\u201cCurrent event\u201d always tracks the replay position. Selecting a rendered node instead fills the input/projected-node pair with that node's own source envelope."
                 />
-                <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
                   <JsonInspector
-                    title="Normalized input"
-                    description="AgenticEventEnvelope"
-                    value={selectedEvent}
-                    emptyLabel="Select a node to inspect its source envelope"
+                    title="Current event"
+                    description={`Event ${replay.currentIndex} of ${replay.totalEvents}`}
+                    value={currentEvent}
+                    emptyLabel="Press Play or Step Forward to apply the first event"
                   />
                   <JsonInspector
-                    title="Projected node"
+                    title={selectedNode ? "Selected node's source envelope" : "Normalized input"}
+                    description="AgenticEventEnvelope"
+                    value={selectedEvent}
+                    emptyLabel="Select a rendered node to inspect its source envelope"
+                  />
+                  <JsonInspector
+                    title="Selected node"
                     description="AgenticViewNode"
                     value={selectedNode}
                     emptyLabel="Select a node to inspect its projected shape"

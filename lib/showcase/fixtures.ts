@@ -44,7 +44,8 @@ export type FoundationScenarioPayload =
   | FoundationRiskPayload
   | FoundationTraceVisibilityPayload
 
-export interface ExecutionLabScenario {
+export interface FoundationExecutionLabScenario {
+  readonly family: "foundation"
   readonly id: string
   readonly label: string
   readonly description: string
@@ -91,8 +92,9 @@ function envelope<TPayload>(
   return { durability: "durable", ...input }
 }
 
-export const executionLabScenarios: readonly ExecutionLabScenario[] = [
+export const executionLabScenarios: readonly FoundationExecutionLabScenario[] = [
   {
+    family: "foundation",
     id: "agent-lifecycle",
     label: "Agent lifecycle",
     description:
@@ -127,6 +129,7 @@ export const executionLabScenarios: readonly ExecutionLabScenario[] = [
     ],
   },
   {
+    family: "foundation",
     id: "runtime-lifecycle",
     label: "Runtime lifecycle",
     description:
@@ -161,6 +164,7 @@ export const executionLabScenarios: readonly ExecutionLabScenario[] = [
     ],
   },
   {
+    family: "foundation",
     id: "risk-and-visibility",
     label: "Risk & trace visibility",
     description:

@@ -37,6 +37,22 @@ import { Badge } from "../../../../src/neoarc-agentic-ui/primitives/badge"
 import { Surface } from "../../../../src/neoarc-agentic-ui/primitives/surface"
 import { Spinner } from "../../../../src/neoarc-agentic-ui/primitives/spinner"
 import { createUIEvent, type AgenticUIEvent } from "../../../../src/neoarc-agentic-contracts/ui-events"
+import { AgentConversation } from "../../../../src/neoarc-agentic-ui/conversation/agent-conversation"
+import { HumanMessage } from "../../../../src/neoarc-agentic-ui/conversation/human-message"
+import { AgentResponse } from "../../../../src/neoarc-agentic-ui/conversation/agent-response"
+import { MessageContentRenderer } from "../../../../src/neoarc-agentic-ui/conversation/message-content-renderer"
+import { AgentComposer } from "../../../../src/neoarc-agentic-ui/conversation/agent-composer"
+import { ClarificationCard } from "../../../../src/neoarc-agentic-ui/conversation/clarification-card"
+import { ActivitySummaryList } from "../../../../src/neoarc-agentic-ui/conversation/activity-summary-list"
+import { ToolActivityDisclosure } from "../../../../src/neoarc-agentic-ui/conversation/tool-activity-disclosure"
+import { CitationGroup } from "../../../../src/neoarc-agentic-ui/conversation/citation-group"
+import { AttachmentList } from "../../../../src/neoarc-agentic-ui/conversation/attachment-list"
+import { ArtifactReferenceCard } from "../../../../src/neoarc-agentic-ui/conversation/artifact-reference-card"
+import { AgentHandoffCard } from "../../../../src/neoarc-agentic-ui/conversation/agent-handoff-card"
+import { AsyncWorkCard } from "../../../../src/neoarc-agentic-ui/conversation/async-work-card"
+import { ResponseActions } from "../../../../src/neoarc-agentic-ui/conversation/response-actions"
+import { ConversationEmptyState } from "../../../../src/neoarc-agentic-ui/conversation/conversation-empty-state"
+import { GenericAgenticNodeFallback } from "../../../../src/neoarc-agentic-ui/conversation/generic-agentic-node-fallback"
 import {
   galleryActionAvailabilities,
   galleryAgent,
@@ -55,6 +71,23 @@ import {
   galleryTraceAccessLevels,
   galleryWorkspaceContext,
 } from "../../../../lib/showcase/gallery-fixtures"
+import {
+  galleryActivitySummaries,
+  galleryAgentMessage,
+  galleryArtifact,
+  galleryAsyncWork,
+  galleryAttachments,
+  galleryCitations,
+  galleryClarificationPending,
+  galleryClarificationResolved,
+  galleryConversationThread,
+  galleryHandoffCompleted,
+  galleryHandoffRunning,
+  galleryHumanMessage,
+  galleryStreamingAgentMessage,
+  galleryToolCompleted,
+  galleryToolRunning,
+} from "../../../../lib/showcase/conversation-gallery-fixtures"
 import { GalleryEntry, GalleryVariantRow } from "./gallery-entry"
 
 export interface ComponentGalleryProps {
@@ -381,6 +414,273 @@ export function ComponentGallery({ onEmitUIEvent }: ComponentGalleryProps) {
           <Spinner size="sm" />
           <Spinner size="md" />
           <Spinner size="lg" />
+        </GalleryVariantRow>
+      </GalleryEntry>
+
+      <InlineNotice
+        tone="info"
+        title="Slice 2 — Conversation family, direct view-model path"
+        description="Every component below is given a ConversationMessage/ConversationTimelineItem value directly — no AgenticEventEnvelope, no projection. The Scenario Replay tab's Chat view proves the same components render identically from the projected path."
+      />
+
+      <GalleryEntry
+        id="agent-conversation"
+        name="AgentConversation"
+        description="Renders an ordered ConversationTimelineItem[] — the single component both integration modes converge on."
+        inputModel="items: ConversationTimelineItem[], onEmitEvent?, emptyState?"
+      >
+        <GalleryVariantRow label="Direct ConversationThread.items (human message -> activity -> agent reply)">
+          <div className="w-full max-w-xl">
+            <AgentConversation items={galleryConversationThread.items} onEmitEvent={onEmitUIEvent} />
+          </div>
+        </GalleryVariantRow>
+        <GalleryVariantRow label="Empty">
+          <div className="w-full max-w-xl">
+            <AgentConversation items={[]} />
+          </div>
+        </GalleryVariantRow>
+      </GalleryEntry>
+
+      <GalleryEntry
+        id="conversation-message"
+        name="HumanMessage / AgentResponse"
+        description="ConversationMessage renders as HumanMessage or AgentResponse depending on author.kind; AgentResponse also surfaces citations/attachments/artifacts and streaming state."
+        inputModel="message: ConversationMessage"
+      >
+        <GalleryVariantRow label="HumanMessage">
+          <div className="w-full max-w-xl">
+            <HumanMessage message={galleryHumanMessage} />
+          </div>
+        </GalleryVariantRow>
+        <GalleryVariantRow label="AgentResponse (completed, with citations/attachments/artifacts)">
+          <div className="w-full max-w-xl">
+            <AgentResponse
+              message={galleryAgentMessage}
+              onEmitCitationEvent={onEmitUIEvent}
+              onEmitAttachmentEvent={onEmitUIEvent}
+              onEmitArtifactEvent={onEmitUIEvent}
+              onEmitStopEvent={onEmitUIEvent}
+              onEmitRetryEvent={onEmitUIEvent}
+            />
+          </div>
+        </GalleryVariantRow>
+        <GalleryVariantRow label="AgentResponse (streaming)">
+          <div className="w-full max-w-xl">
+            <AgentResponse message={galleryStreamingAgentMessage} />
+          </div>
+        </GalleryVariantRow>
+      </GalleryEntry>
+
+      <GalleryEntry
+        id="message-content-renderer"
+        name="MessageContentRenderer"
+        description="Renders MessageContentBlock[] — plain text blocks as-is, markdown blocks through a minimal dependency-free formatter (bold/italic/inline code/links)."
+        inputModel="blocks: MessageContentBlock[]"
+      >
+        <GalleryVariantRow label="Text block">
+          <MessageContentRenderer blocks={[{ kind: "text", text: "Plain text content, rendered as-is." }]} />
+        </GalleryVariantRow>
+        <GalleryVariantRow label="Markdown block">
+          <MessageContentRenderer
+            blocks={[{ kind: "markdown", markdown: "Supports **bold**, _italic_, `inline code`, and [links](https://example.com)." }]}
+          />
+        </GalleryVariantRow>
+      </GalleryEntry>
+
+      <GalleryEntry
+        id="agent-composer"
+        name="AgentComposer"
+        description="Controlled message composer. Emits conversation.message.send on submit and conversation.stop.request when a response is in progress."
+        inputModel="disabled?, isResponding?, respondingMessageId?, onEmitSendEvent?, onEmitStopEvent?"
+      >
+        <GalleryVariantRow label="Idle">
+          <div className="w-full max-w-xl">
+            <AgentComposer onEmitSendEvent={onEmitUIEvent} onEmitStopEvent={onEmitUIEvent} />
+          </div>
+        </GalleryVariantRow>
+        <GalleryVariantRow label="Response in progress (shows Stop instead of Send)">
+          <div className="w-full max-w-xl">
+            <AgentComposer
+              isResponding
+              respondingMessageId="gallery-msg-streaming"
+              onEmitSendEvent={onEmitUIEvent}
+              onEmitStopEvent={onEmitUIEvent}
+            />
+          </div>
+        </GalleryVariantRow>
+      </GalleryEntry>
+
+      <GalleryEntry
+        id="clarification-card"
+        name="ClarificationCard"
+        description="Pending clarification with option buttons or free-text submit; resolved clarifications render their resolution instead of the form."
+        inputModel="clarification: ClarificationRequest, onEmitEvent?"
+      >
+        <GalleryVariantRow label="Pending (with options)">
+          <div className="w-full max-w-xl">
+            <ClarificationCard clarification={galleryClarificationPending} onEmitEvent={onEmitUIEvent} />
+          </div>
+        </GalleryVariantRow>
+        <GalleryVariantRow label="Resolved">
+          <div className="w-full max-w-xl">
+            <ClarificationCard clarification={galleryClarificationResolved} onEmitEvent={onEmitUIEvent} />
+          </div>
+        </GalleryVariantRow>
+      </GalleryEntry>
+
+      <GalleryEntry
+        id="activity-summary-list"
+        name="ActivitySummaryList"
+        description="Safe, observable activity lines only — never chain-of-thought. Shows a running indicator on the current item."
+        inputModel="items: ActivitySummary[]"
+      >
+        <GalleryVariantRow label="Reviewing -> retrieving (running) -> preparing (queued)">
+          <div className="w-full max-w-xl">
+            <ActivitySummaryList items={galleryActivitySummaries} />
+          </div>
+        </GalleryVariantRow>
+      </GalleryEntry>
+
+      <GalleryEntry
+        id="tool-activity-disclosure"
+        name="ToolActivityDisclosure"
+        description="Collapsible tool-invocation summary. Emits toolActivity.toggle on expand/collapse; never assumes raw tool I/O."
+        inputModel="tool: ToolActivitySummary, onEmitEvent?"
+      >
+        <GalleryVariantRow label="Running">
+          <div className="w-full max-w-md">
+            <ToolActivityDisclosure tool={galleryToolRunning} onEmitEvent={onEmitUIEvent} />
+          </div>
+        </GalleryVariantRow>
+        <GalleryVariantRow label="Completed (with summary)">
+          <div className="w-full max-w-md">
+            <ToolActivityDisclosure tool={galleryToolCompleted} onEmitEvent={onEmitUIEvent} />
+          </div>
+        </GalleryVariantRow>
+      </GalleryEntry>
+
+      <GalleryEntry
+        id="citation-group"
+        name="CitationGroup"
+        description="Supplied citations only — the kit never fabricates a source. Emits citation.open on click."
+        inputModel="citations: CitationRef[], onEmitEvent?"
+      >
+        <GalleryVariantRow label="Two citations">
+          <CitationGroup citations={galleryCitations} onEmitEvent={onEmitUIEvent} />
+        </GalleryVariantRow>
+      </GalleryEntry>
+
+      <GalleryEntry
+        id="attachment-list"
+        name="AttachmentList"
+        description="Supplied file attachments with name/size/mime-type. Emits attachment.open on click."
+        inputModel="attachments: AttachmentRef[], onEmitEvent?"
+      >
+        <GalleryVariantRow label="Two attachments">
+          <AttachmentList attachments={galleryAttachments} onEmitEvent={onEmitUIEvent} />
+        </GalleryVariantRow>
+      </GalleryEntry>
+
+      <GalleryEntry
+        id="artifact-reference-card"
+        name="ArtifactReferenceCard"
+        description="Reference to a produced artifact (document, diagram, code change). Emits artifact.open on click."
+        inputModel="artifact: ArtifactRef, onEmitEvent?"
+      >
+        <GalleryVariantRow label="Completed diagram artifact">
+          <div className="w-full max-w-md">
+            <ArtifactReferenceCard artifact={galleryArtifact} onEmitEvent={onEmitUIEvent} />
+          </div>
+        </GalleryVariantRow>
+      </GalleryEntry>
+
+      <GalleryEntry
+        id="agent-handoff-card"
+        name="AgentHandoffCard"
+        description="Agent-to-agent handoff summary with from/to identities, reason, and status. Emits handoff.open on click."
+        inputModel="handoff: HandoffSummary, onEmitEvent?"
+      >
+        <GalleryVariantRow label="Running">
+          <div className="w-full max-w-lg">
+            <AgentHandoffCard handoff={galleryHandoffRunning} onEmitEvent={onEmitUIEvent} />
+          </div>
+        </GalleryVariantRow>
+        <GalleryVariantRow label="Completed">
+          <div className="w-full max-w-lg">
+            <AgentHandoffCard handoff={galleryHandoffCompleted} onEmitEvent={onEmitUIEvent} />
+          </div>
+        </GalleryVariantRow>
+      </GalleryEntry>
+
+      <GalleryEntry
+        id="async-work-card"
+        name="AsyncWorkCard"
+        description="Work continuing outside the current turn, with an optional supplied ETA label. Not one of the ten projected node kinds — always used via the direct view-model path."
+        inputModel="work: AsyncWorkSummary"
+      >
+        <GalleryVariantRow label="Running with ETA">
+          <div className="w-full max-w-md">
+            <AsyncWorkCard work={galleryAsyncWork} />
+          </div>
+        </GalleryVariantRow>
+      </GalleryEntry>
+
+      <GalleryEntry
+        id="response-actions"
+        name="ResponseActions"
+        description="Action row for an in-progress (Stop) or failed (Retry) agent response. Renders nothing for a terminal completed/cancelled status."
+        inputModel="messageId, status: RuntimeStatus, onEmitStopEvent?, onEmitRetryEvent?"
+      >
+        <GalleryVariantRow label="Running (Stop) / Failed (Retry) / Completed (nothing)">
+          <ResponseActions
+            messageId="gallery-msg-running"
+            status="running"
+            onEmitStopEvent={onEmitUIEvent}
+            onEmitRetryEvent={onEmitUIEvent}
+          />
+          <ResponseActions
+            messageId="gallery-msg-failed"
+            status="failed"
+            onEmitStopEvent={onEmitUIEvent}
+            onEmitRetryEvent={onEmitUIEvent}
+          />
+          <span className="text-xs text-[var(--neoarc-color-foreground-subtle)]">
+            (completed renders nothing — see empty space to the right)
+          </span>
+          <ResponseActions
+            messageId="gallery-msg-completed"
+            status="completed"
+            onEmitStopEvent={onEmitUIEvent}
+            onEmitRetryEvent={onEmitUIEvent}
+          />
+        </GalleryVariantRow>
+      </GalleryEntry>
+
+      <GalleryEntry
+        id="conversation-empty-state"
+        name="ConversationEmptyState"
+        description="AgentConversation's default emptyState, overridable via the emptyState prop."
+        inputModel="(no props)"
+      >
+        <GalleryVariantRow label="Default">
+          <div className="w-full max-w-xl">
+            <ConversationEmptyState />
+          </div>
+        </GalleryVariantRow>
+      </GalleryEntry>
+
+      <GalleryEntry
+        id="generic-agentic-node-fallback"
+        name="GenericAgenticNodeFallback"
+        description="Safe fallback for any AgenticViewNode whose (target, kind) has no specific renderer registration — mirrors the Execution Lab's own generic fallback, but as a reusable src/neoarc-agentic-ui component."
+        inputModel="node: AgenticViewNode"
+      >
+        <GalleryVariantRow label="Unrecognized node kind">
+          <div className="w-full max-w-md">
+            <GenericAgenticNodeFallback
+              node={{ key: "gallery-unknown-node", kind: "mission.unrecognized-kind", target: "mission", data: { note: "example payload" }, visibility: "visible" }}
+            />
+          </div>
         </GalleryVariantRow>
       </GalleryEntry>
 

@@ -11,11 +11,11 @@
  * here would blur that boundary.
  */
 
-import type { ExecutionLabScenario } from "../../../lib/showcase/fixtures"
+import type { AnyExecutionLabScenario } from "../../../lib/showcase/all-scenarios"
 import { cn } from "../../../src/neoarc-agentic-ui/lib/cn"
 
 export interface ScenarioSelectorProps {
-  readonly scenarios: readonly ExecutionLabScenario[]
+  readonly scenarios: readonly AnyExecutionLabScenario[]
   readonly activeScenarioId: string
   readonly onSelect: (id: string) => void
 }
