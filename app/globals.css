@@ -2,6 +2,16 @@
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
 
+/*
+ * NeoArc Agentic Experience Kit — reusable design tokens.
+ * Owned by src/neoarc-agentic-ui/styles (not by this showcase app). See
+ * docs/implementation/MASTER_IMPLEMENTATION_PLAN.md, Correction 1.
+ * Namespaced with --neoarc- so they never collide with the shadcn tokens
+ * below, which remain the theme for shadcn/Radix primitives only.
+ */
+@import '../src/neoarc-agentic-ui/styles/tokens.css';
+@import '../src/neoarc-agentic-ui/styles/themes.css';
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
