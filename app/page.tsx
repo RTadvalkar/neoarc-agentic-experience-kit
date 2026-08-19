@@ -59,7 +59,7 @@ export default function Home() {
           <span className="text-xs font-medium uppercase tracking-wide text-[var(--neoarc-color-foreground-subtle)]">
             Reference experiences — showcase only
           </span>
-          <div className="flex flex-col gap-2 sm:flex-row">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             <Link
               href="/agent-workspace"
               className="inline-flex flex-1 items-center justify-between gap-2 rounded-[var(--neoarc-radius-md)] border border-[var(--neoarc-color-border)] bg-[var(--neoarc-color-surface)] px-4 py-3 text-sm font-medium text-[var(--neoarc-color-foreground)] hover:bg-[var(--neoarc-color-surface-muted)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--neoarc-color-focus-ring)]"
@@ -72,6 +72,20 @@ export default function Home() {
               className="inline-flex flex-1 items-center justify-between gap-2 rounded-[var(--neoarc-radius-md)] border border-[var(--neoarc-color-border)] bg-[var(--neoarc-color-surface)] px-4 py-3 text-sm font-medium text-[var(--neoarc-color-foreground)] hover:bg-[var(--neoarc-color-surface-muted)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--neoarc-color-focus-ring)]"
             >
               Execution Investigation
+              <ArrowRight className="size-3.5 text-[var(--neoarc-color-foreground-muted)]" aria-hidden="true" />
+            </Link>
+            <Link
+              href="/mission-center"
+              className="inline-flex flex-1 items-center justify-between gap-2 rounded-[var(--neoarc-radius-md)] border border-[var(--neoarc-color-border)] bg-[var(--neoarc-color-surface)] px-4 py-3 text-sm font-medium text-[var(--neoarc-color-foreground)] hover:bg-[var(--neoarc-color-surface-muted)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--neoarc-color-focus-ring)]"
+            >
+              Mission Center
+              <ArrowRight className="size-3.5 text-[var(--neoarc-color-foreground-muted)]" aria-hidden="true" />
+            </Link>
+            <Link
+              href="/proposal-review"
+              className="inline-flex flex-1 items-center justify-between gap-2 rounded-[var(--neoarc-radius-md)] border border-[var(--neoarc-color-border)] bg-[var(--neoarc-color-surface)] px-4 py-3 text-sm font-medium text-[var(--neoarc-color-foreground)] hover:bg-[var(--neoarc-color-surface-muted)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--neoarc-color-focus-ring)]"
+            >
+              Proposal Review
               <ArrowRight className="size-3.5 text-[var(--neoarc-color-foreground-muted)]" aria-hidden="true" />
             </Link>
           </div>
