@@ -58,7 +58,7 @@ const architectureAgent: AgentSummary = {
   version: "2.1.0",
 }
 
-const missionArchitecture: MissionSummary = {
+export const missionArchitecture: MissionSummary = {
   id: "mission-arch-1",
   title: "Introduce an async order-events service",
   description: "Design and provision a new async order-events service and document the decision.",
