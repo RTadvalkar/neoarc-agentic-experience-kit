@@ -95,7 +95,7 @@ export function MissionCenterExperience() {
     setUiEvents((previous) => [...previous, event])
   }
 
-  const groups: Record<MissionCenterGroup, readonly MissionCenterItem[]> = { needs_you: [], active: [], history: [] }
+  const groups: Record<MissionCenterGroup, MissionCenterItem[]> = { needs_you: [], active: [], history: [] }
   for (const item of missionCenterItems) {
     const run = runOverrides[item.id] ?? item.run
     groups[groupFor(run)].push(item)

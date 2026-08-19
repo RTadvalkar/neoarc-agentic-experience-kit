@@ -15,7 +15,8 @@
  */
 
 import type { PendingInteraction, PresentationIntent } from "../../../src/neoarc-agentic-contracts/human-interaction"
-import type { ProgressSummary, RiskLevel, RunSummary } from "../../../src/neoarc-agentic-contracts/runtime"
+import type { RiskLevel } from "../../../src/neoarc-agentic-contracts/foundation"
+import type { ProgressSummary, RunSummary } from "../../../src/neoarc-agentic-contracts/runtime"
 import { Badge } from "../../../src/neoarc-agentic-ui/primitives/badge"
 import { RiskBadge } from "../../../src/neoarc-agentic-ui/foundation/risk-badge"
 import { Timestamp } from "../../../src/neoarc-agentic-ui/foundation/timestamp"
